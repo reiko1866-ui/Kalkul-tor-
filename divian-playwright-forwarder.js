@@ -611,7 +611,7 @@ async function forwardPayload(payload) {
   try {
     const res = await fetch(FORWARD_ENDPOINT, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {"Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
     const body = await res.text();
@@ -1773,14 +1773,14 @@ async function capturePlannerScreenshotPayload(label = "Aktuális nézet", plann
       }
       res.setHeader("Access-Control-Allow-Origin", "*");
       res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-      res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+      res.setHeader("Access-Control-Allow-Headers","Content-Type");
       if (req.method === "OPTIONS") {
       res.writeHead(204);
       res.end();
         return;
       }
       if (pathname === "/health" && req.method === "GET") {
-        res.writeHead(200, { "Content-Type": "application/json" });
+        res.writeHead(200, {"Content-Type": "application/json" });
         res.end(
           JSON.stringify({
             ok: true,
@@ -1828,7 +1828,7 @@ async function capturePlannerScreenshotPayload(label = "Aktuális nézet", plann
       }
       if (pathname === "/auth-accounts" && req.method === "GET") {
         const accounts = readAuthAccountsFromFile();
-        res.writeHead(200, { "Content-Type": "application/json" });
+        res.writeHead(200, {"Content-Type": "application/json" });
         res.end(JSON.stringify({ ok: true, accounts, file: AUTH_ACCOUNTS_FILE }));
         return;
       }
@@ -1842,16 +1842,16 @@ async function capturePlannerScreenshotPayload(label = "Aktuális nézet", plann
         try {
           parsed = body ? JSON.parse(body) : {};
         } catch (_err) {
-          res.writeHead(400, { "Content-Type": "application/json" });
+          res.writeHead(400, {"Content-Type": "application/json" });
           res.end(JSON.stringify({ ok: false, error: "invalid-json" }));
           return;
         }
         try {
           const saved = writeAuthAccountsToFile(parsed.accounts || parsed);
-          res.writeHead(200, { "Content-Type": "application/json" });
+          res.writeHead(200, {"Content-Type": "application/json" });
           res.end(JSON.stringify({ ok: true, accounts: saved, file: AUTH_ACCOUNTS_FILE }));
         } catch (err) {
-          res.writeHead(500, { "Content-Type": "application/json" });
+          res.writeHead(500, {"Content-Type": "application/json" });
           res.end(JSON.stringify({ ok: false, error: String(err?.message || err) }));
         }
         return;
@@ -1861,10 +1861,10 @@ async function capturePlannerScreenshotPayload(label = "Aktuális nézet", plann
         const enriched = String(u.searchParams.get("enriched") || "") === "1";
         try {
           const rows = enriched ? await scanOrderSaveDirEnriched() : await scanOrderSaveDir();
-          res.writeHead(200, { "Content-Type": "application/json" });
+          res.writeHead(200, {"Content-Type": "application/json" });
           res.end(JSON.stringify({ ok: true, rows, folder: ORDER_SAVE_DIR }));
         } catch (err) {
-          res.writeHead(500, { "Content-Type": "application/json" });
+          res.writeHead(500, {"Content-Type": "application/json" });
           res.end(JSON.stringify({ ok: false, error: String(err?.message || err) }));
         }
         return;
@@ -1877,7 +1877,7 @@ async function capturePlannerScreenshotPayload(label = "Aktuális nézet", plann
           res.writeHead(result.ok ? 200 : 404, {"Content-Type": "application/json" });
           res.end(JSON.stringify(result));
         } catch (err) {
-          res.writeHead(500, { "Content-Type": "application/json" });
+          res.writeHead(500, {"Content-Type": "application/json" });
           res.end(JSON.stringify({ ok: false, error: String(err?.message || err) }));
         }
         return;
@@ -1886,14 +1886,14 @@ async function capturePlannerScreenshotPayload(label = "Aktuális nézet", plann
         const u = new URL(req.url || "", "http://localhost");
         const quote = String(u.searchParams.get("quote") || u.searchParams.get("number") || "").trim();
         if (!quote) {
-          res.writeHead(400, { "Content-Type": "application/json" });
+          res.writeHead(400, {"Content-Type": "application/json" });
           res.end(JSON.stringify({ ok: false, error: "missing quote parameter" }));
           return;
         }
         try {
           const result = await readOrderSavePdfBuffer(quote);
           if (!result.ok || !result.buffer) {
-            res.writeHead(404, { "Content-Type": "application/json" });
+            res.writeHead(404, {"Content-Type": "application/json" });
             res.end(
               JSON.stringify({
                 ok: false,
@@ -2091,10 +2091,10 @@ async function capturePlannerScreenshotPayload(label = "Aktuális nézet", plann
       if (pathname === "/api/admin-settings" && req.method === "GET") {
         try {
           const settings = await readAdminSettings();
-          res.writeHead(200, { "Content-Type": "application/json" });
+          res.writeHead(200, {"Content-Type": "application/json" });
           res.end(JSON.stringify({ ok: true, settings, file: SETTINGS_FILE }));
         } catch (err) {
-          res.writeHead(500, { "Content-Type": "application/json" });
+          res.writeHead(500, {"Content-Type": "application/json" });
           res.end(JSON.stringify({ ok: false, error: String(err?.message || err) }));
         }
         return;
@@ -2109,16 +2109,16 @@ async function capturePlannerScreenshotPayload(label = "Aktuális nézet", plann
         try {
           parsed = body ? JSON.parse(body) : {};
         } catch (_err) {
-          res.writeHead(400, { "Content-Type": "application/json" });
+          res.writeHead(400, {"Content-Type": "application/json" });
           res.end(JSON.stringify({ ok: false, error: "invalid-json" }));
           return;
         }
         try {
           const result = await writeAdminSettings(parsed.settings || parsed);
-          res.writeHead(200, { "Content-Type": "application/json" });
+          res.writeHead(200, {"Content-Type": "application/json" });
           res.end(JSON.stringify(result));
         } catch (err) {
-          res.writeHead(500, { "Content-Type": "application/json" });
+          res.writeHead(500, {"Content-Type": "application/json" });
           res.end(JSON.stringify({ ok: false, error: String(err?.message || err) }));
         }
         return;
@@ -2131,10 +2131,10 @@ async function capturePlannerScreenshotPayload(label = "Aktuális nézet", plann
         await new Promise((resolve) => req.on("end", resolve));
         try {
           const result = await handleThunderbirdComposeRequest(body);
-          res.writeHead(200, { "Content-Type": "application/json" });
+          res.writeHead(200, {"Content-Type": "application/json" });
           res.end(JSON.stringify(result));
         } catch (err) {
-          res.writeHead(500, { "Content-Type": "application/json" });
+          res.writeHead(500, {"Content-Type": "application/json" });
           res.end(JSON.stringify({ ok: false, error: String(err?.message || err) }));
         }
         return;
@@ -2147,10 +2147,10 @@ async function capturePlannerScreenshotPayload(label = "Aktuális nézet", plann
         await new Promise((resolve) => req.on("end", resolve));
         try {
           const result = await handleDeliveryNoteSavePdfRequest(body);
-          res.writeHead(200, { "Content-Type": "application/json" });
+          res.writeHead(200, {"Content-Type": "application/json" });
           res.end(JSON.stringify(result));
         } catch (err) {
-          res.writeHead(500, { "Content-Type": "application/json" });
+          res.writeHead(500, {"Content-Type": "application/json" });
           res.end(JSON.stringify({ ok: false, error: String(err?.message || err) }));
         }
         return;
@@ -2163,10 +2163,10 @@ async function capturePlannerScreenshotPayload(label = "Aktuális nézet", plann
         await new Promise((resolve) => req.on("end", resolve));
         try {
           const result = await handleSzamlazzRequest(body);
-          res.writeHead(200, { "Content-Type": "application/json" });
+          res.writeHead(200, {"Content-Type": "application/json" });
           res.end(JSON.stringify(result));
         } catch (err) {
-          res.writeHead(500, { "Content-Type": "application/json" });
+          res.writeHead(500, {"Content-Type": "application/json" });
           res.end(JSON.stringify({ ok: false, error: String(err?.message || err) }));
         }
         return;
@@ -2181,7 +2181,7 @@ async function capturePlannerScreenshotPayload(label = "Aktuális nézet", plann
         try {
           parsed = body ? JSON.parse(body) : {};
         } catch (_err) {
-          res.writeHead(400, { "Content-Type": "application/json" });
+          res.writeHead(400, {"Content-Type": "application/json" });
           res.end(JSON.stringify({ ok: false, error: "invalid-json" }));
           return;
         }
@@ -2196,7 +2196,7 @@ async function capturePlannerScreenshotPayload(label = "Aktuális nézet", plann
             .filter(Boolean)
             .join(" → ")
         );
-        res.writeHead(200, { "Content-Type": "application/json" });
+        res.writeHead(200, {"Content-Type": "application/json" });
         res.end(
           JSON.stringify({
             ok: true,
@@ -2217,7 +2217,7 @@ async function capturePlannerScreenshotPayload(label = "Aktuális nézet", plann
         try {
           parsed = body ? JSON.parse(body) : {};
         } catch (_err) {
-          res.writeHead(400, { "Content-Type": "application/json" });
+          res.writeHead(400, {"Content-Type": "application/json" });
           res.end(JSON.stringify({ ok: false, error: "invalid-json" }));
           return;
         }
@@ -2225,7 +2225,7 @@ async function capturePlannerScreenshotPayload(label = "Aktuális nézet", plann
         await ensureCynclyPlannerPage(plannerUrl || undefined);
         const surface = getCynclyPlannerSurface();
         if (!surface || isPlannerTargetClosed(surface)) {
-          res.writeHead(500, { "Content-Type": "application/json" });
+          res.writeHead(500, {"Content-Type": "application/json" });
           res.end(JSON.stringify({ ok: false, error: "cyncly-page-missing" }));
           return;
         }
@@ -2250,7 +2250,7 @@ async function capturePlannerScreenshotPayload(label = "Aktuális nézet", plann
           }
         }
         if (!payload || !payload.items?.length) {
-          res.writeHead(502, { "Content-Type": "application/json" });
+          res.writeHead(502, {"Content-Type": "application/json" });
           res.end(
             JSON.stringify({
               ok: false,
@@ -2261,7 +2261,7 @@ async function capturePlannerScreenshotPayload(label = "Aktuális nézet", plann
           return;
         }
         await postMessageToAjanlatPages(context, payload);
-        res.writeHead(200, { "Content-Type": "application/json" });
+        res.writeHead(200, {"Content-Type": "application/json" });
         res.end(JSON.stringify(payload));
         return;
       }
@@ -2278,12 +2278,12 @@ async function capturePlannerScreenshotPayload(label = "Aktuális nézet", plann
         } catch (_err) {}
         const payload = await capturePlannerScreenshotPayload(String(parsed?.label || "Aktuális nézet"), parsed?.plannerUrl);
         await postMessageToAjanlatPages(context, payload);
-        res.writeHead(200, { "Content-Type": "application/json" });
+        res.writeHead(200, {"Content-Type": "application/json" });
         res.end(JSON.stringify(payload));
         return;
       }
       if (await tryServeStaticFile(req, res, pathname)) return;
-      res.writeHead(404, { "Content-Type": "application/json" });
+      res.writeHead(404, {"Content-Type": "application/json" });
       res.end(
         JSON.stringify({
           error: "not-found",
@@ -2298,7 +2298,7 @@ async function capturePlannerScreenshotPayload(label = "Aktuális nézet", plann
       );
     } catch (err) {
       console.error("[Screenshot API] request failed:", err?.message || err);
-      res.writeHead(500, { "Content-Type": "application/json" });
+      res.writeHead(500, {"Content-Type": "application/json" });
       res.end(JSON.stringify({ error: String(err?.message || err) }));
     }
   });
