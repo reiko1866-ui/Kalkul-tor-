@@ -2398,11 +2398,25 @@ start().catch((err) => {
   process.exit(1);
 });
 const Port = process.env.PORT || 10000;
+const server = const http = require('http');
+// Szükséged lesz a http-proxy modulra, ha még nincs, add hozzá: npm install http-proxy
+const httpProxy = require('http-proxy');
+const proxy = httpProxy.createProxyServer({});
+
 const server = http.createServer((req, res) => {
-    res.writeHead(200, {'Content-Type': 'text/plain' });
-    res.end('Divian forwarder elben van es fut!\n');
+    // 1. Ha a kérés a gyökérre érkezik, írd ki a futást
+    if (req.url === '/') {
+        res.writeHead(200, {'Content-Type': 'text/plain'});
+        res.end('Divian forwarder elben van es fut!\n');
+    }
+    // 2. Minden más kérést (tervező, árajánlat) továbbíts a Playwright szerverre (17321)
+    else {
+        proxy.web(req, res, { target: 'http://localhost:17321' }, (err) => {
+            console.error('Proxy hiba:', err);
+            res.writeHead(500);
+            res.end('Hiba a tervező elerese soran.');
+        });
+    }
 });
-server.listen(Port, '0.0.0.0', () => {
-    console.log(`[Render] Kamubanda (port) sikeresen megnyitva a ${Port} porton!`);
-});
+ 
 
