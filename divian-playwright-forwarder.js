@@ -2399,7 +2399,7 @@ start().catch((err) => {
 });
 const Port = process.env.PORT || 10000;
 const server = http.createServer((req, res) => {
-    res.writheHead(200, { ' Content-Type': 'text/plain' });
+    res.writeHead(200, { ' Content-Type': 'text/plain' });
     res.end('Divian forwarder elben van es fut!\n');
 });
 server.listen(Port, '0.0.0.0', () => {
