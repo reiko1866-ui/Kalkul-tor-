@@ -2399,7 +2399,7 @@ start().catch((err) => {
 });
 const Port = process.env.PORT || 10000;
 // Szükséged lesz a http-proxy modulra, ha még nincs, add hozzá: npm install http-proxy
-const httpProxy = require('http-proxy');\
+const httpProxy = require('http-proxy');
 const proxy = httpProxy.createProxyServer({});
 
 
