@@ -256,8 +256,8 @@ async function tryServeStaticFile(req, res, pathname) {
   const contentType = STATIC_MIME_TYPES[ext] || "application/octet-stream";
   const body = await fsPromises.readFile(filePath);
   res.writeHead(200, {
-    "Content-Type": contentType,
-    "Cache-Control": "no-cache"
+  "Content-Type": contentType,
+  "Cache-Control": "no-cache"
   });
   if (req.method === "HEAD") res.end();
   else res.end(body);
