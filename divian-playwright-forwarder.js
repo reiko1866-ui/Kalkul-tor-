@@ -714,7 +714,7 @@ function envFlagForwarder(name, defaultVal) {
 
 function buildPlaywrightLaunchOptions() {
   return {
-    headless: false,
+    headless: true,
     ignoreHTTPSErrors: true,
     userAgent: DEFAULT_USER_AGENT,
     locale: "hu-HU",
