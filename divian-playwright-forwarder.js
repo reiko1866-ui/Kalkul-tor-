@@ -2403,7 +2403,7 @@ const http = require('http');\
 const httpProxy = require('http-proxy');
 const proxy = httpProxy.createProxyServer({});
 
-const server = http.createServer((req, res) => {
+
     // 1. Ha a kérés a gyökérre érkezik, írd ki a futást
     if (req.url === '/') {
         res.writeHead(200, {'Content-Type': 'text/plain'});
