@@ -2,14 +2,15 @@
   "name": "divian-kalkulator",
   "private": true,
   "scripts": {
-    "forwarder": "node divian-playwright-forwarder.js",
+    "start": "node divian-playwright-forwarder.js",
     "static-server": "node divian-static-server.js",
     "server": "node divian-static-server.js",
-    "init-server-data": "node tools/init-server-data.js"
+    "init-server-data": "node eszkozok/init-server-data.js"
   },
   "dependencies": {
     "localtunnel": "^2.0.2",
     "playwright": "^1.59.1",
-    "szamlazz.js": "^9.2.0"
+    "szamlazz.js": "^9.2.0",
+    "http-proxy": "^1.18.1"
   }
 }
