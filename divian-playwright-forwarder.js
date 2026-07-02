@@ -1231,7 +1231,7 @@ async function start() {
     if (!response.ok()) throw new Error("render-fetch-http-" + response.status());
     const buf = await response.body();
     if (!buf || buf.length < 60000) throw new Error("render-fetch-too-small");
-    return { buf, contentType: String(response.headers()["content-type"] || "image/png") };
+    return { buf, contentType: String(response.headers()["Content-Type"] || "image/png") };
   }
 
   function bufferToImageDataUrl(buf, contentType) {
@@ -2399,7 +2399,7 @@ start().catch((err) => {
 });
 const Port = process.env.PORT || 10000;
 const server = http.createServer((req, res) => {
-    res.writeHead(200, { ' Content-Type': 'text/plain' });
+    res.writeHead(200, {'Content-Type': 'text/plain' });
     res.end('Divian forwarder elben van es fut!\n');
 });
 server.listen(Port, '0.0.0.0', () => {
