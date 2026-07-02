@@ -1775,8 +1775,8 @@ async function capturePlannerScreenshotPayload(label = "Aktuális nézet", plann
       res.setHeader("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
       res.setHeader("Access-Control-Allow-Headers", "Content-Type");
       if (req.method === "OPTIONS") {
-        res.writeHead(204);
-        res.end();
+      res.writeHead(204);
+      res.end();
         return;
       }
       if (pathname === "/health" && req.method === "GET") {
