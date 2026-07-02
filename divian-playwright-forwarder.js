@@ -2398,24 +2398,25 @@ start().catch((err) => {
   process.exit(1);
 });
 const Port = process.env.PORT || 10000;
-// Szükséged lesz a http-proxy modulra, ha még nincs, add hozzá: npm install http-proxy
 const httpProxy = require('http-proxy');
 const proxy = httpProxy.createProxyServer({});
 
+const server = require('http').createServer((req, res) => {
+  // 1. Ha a kérés a gyökérre érkezik, írd ki a futást
+  if (req.url === '/') {
+    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Divian forwarder élesben van és fut hiba nélkül!');
+    return;
+  }
 
-    // 1. Ha a kérés a gyökérre érkezik, írd ki a futást
-    if (req.url === '/') {
-        res.writeHead(200, {'Content-Type': 'text/plain'});
-        res.end('Divian forwarder elben van es fut!\n');
-    }
-    // 2. Minden más kérést (tervező, árajánlat) továbbíts a Playwright szerverre (17321)
-    else {
-        proxy.web(req, res, { target: 'http://localhost:17321' }, (err) => {
-            console.error('Proxy hiba:', err);
-            res.writeHead(500);
-            res.end('Hiba a tervező elerese soran.');
-        });
-    }
+  // 2. Minden más kérést továbbítunk a cél szerverre
+  proxy.web(req, res, { target: 'http://localhost:3000' }, (err) => {
+    console.error('Proxy hiba:', err);
+    res.writeHead(500, { 'Content-Type': 'text/plain' });
+    res.end('Szerver oldali hiba történt a továbbítás közben.');
+  });
 });
- 
 
+server.listen(Port, () => {
+  console.log(`A könnyű proxy szerver sikeresen fut a ${Port} porton!`);
+});
