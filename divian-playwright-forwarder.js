@@ -2402,25 +2402,17 @@ const httpProxy = require('http-proxy');
 const proxy = httpProxy.createProxyServer({});
 
 const server = require('http').createServer((req, res) => {
-  // 1. Ha a kérés a gyökérre érkezik, írd ki a futást
-  if (req.url === '/') {
-    res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('Divian forwarder élesben van és fut hiba nélkül!');
-    return;
-  }
-
-  // 2. Minden kérést egyből a Divián hivatalos tervezőjére irányítunk át
+  // Minden kérést egyenesen a Divián hivatalos tervezőjére dobunk át
   proxy.web(req, res, { 
-    target: 'https://designer.cyncly.com',
+    target: 'https://planner.cyncly-idealspaces.com',
     changeOrigin: true
   }, (err) => {
     console.error('Proxy hiba:', err);
     res.writeHead(500, { 'Content-Type': 'text/plain' });
-    res.end('Szerver oldali hiba történt a továbbítás közben.');
+    res.end('Hiba a tovabbitas soran.');
   });
 });
 
 server.listen(Port, () => {
-  console.log(`A könnyű proxy szerver sikeresen fut a ${Port} porton!`);
+  console.log(`Proxy szerver fut a ${Port} porton!`);
 });
-      
