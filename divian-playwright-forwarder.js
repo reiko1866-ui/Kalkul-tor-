@@ -2403,16 +2403,24 @@ start().catch((err) => {
   const internalProxy = httpProxy.createProxyServer({});
 
   require('http').createServer((req, res) => {
-    // Minden beérkező kérést átdobunk a belső 7331-es (vagy 73321-es) portra
+    // Első körben a 7331-es portra küldjük a kérést
     internalProxy.web(req, res, { 
       target: 'http://127.0.0.1:7331',
       changeOrigin: true
     }, (err) => {
-      console.error('Belső proxy hiba:', err);
-      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
-      res.end('A belső folyamat még nem indult el vagy nem elérhető.');
+      // Ha a 7331 nem él, B-tervként megpróbáljuk a 3000-es portot hátha ott fut
+      console.log('7331 nem válaszolt, próbálkozás a 3000-es porttal...');
+      
+      internalProxy.web(req, res, {
+        target: 'http://127.0.0.1:3000',
+        changeOrigin: true
+      }, (err2) => {
+        console.error('Egyik belső port sem elérhető:', err2);
+        res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('A háttérfolyamat (forwarder) nem fut vagy nem válaszol a belső portokon.');
+      });
     });
   }).listen(expressport, () => {
-    console.log(`Külső-belső híd aktív a ${expressport} porton.`);
+    console.log(`Intelligens híd aktív a ${expressport} porton.`);
   });
 })();
