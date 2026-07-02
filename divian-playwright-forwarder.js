@@ -2398,7 +2398,7 @@ start().catch((err) => {
   process.exit(1);
 });
 const Port = process.env.PORT || 10000;
-const server = const http = require('http');
+const http = require('http');\
 // Szükséged lesz a http-proxy modulra, ha még nincs, add hozzá: npm install http-proxy
 const httpProxy = require('http-proxy');
 const proxy = httpProxy.createProxyServer({});
