@@ -2398,15 +2398,36 @@ start().catch((err) => {
   process.exit(1);
 });
 const Port = process.env.PORT || 10000;
+const fs = require('fs');
+const path = require('path');
 
 const server = require('http').createServer((req, res) => {
-  // Nem proxy-zunk, hanem a böngészőnek mondjuk meg, hogy ugorjon a pontos tervezőre
-  res.writeHead(301, {
-    'Location': 'https://planner.cyncly-idealspaces.com/hu/designer'
-  });
-  res.end();
+  // Ha a főoldalt nyitják meg, visszaadjuk a HTML felületet, ha létezik
+  if (req.url === '/' || req.url === '/index.html') {
+    const htmlPath = path.join(__dirname, 'iranyitopult.html');
+    
+    if (fs.existsSync(htmlPath)) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      return fs.createReadStream(htmlPath).pipe(res);
+    } else {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      return res.end('<h1>Divian Szerver</h1><p>A proxy mentes hatterfolyamat sikeresen fut!</p>');
+    }
+  }
+
+  // Ha a dashboard js fájlt kéri a böngésző
+  if (req.url === '/divian-dashboard.js') {
+    const jsPath = path.join(__dirname, 'divian-dashboard.js');
+    if (fs.existsSync(jsPath)) {
+      res.writeHead(200, { 'Content-Type': 'application/javascript' });
+      return fs.createReadStream(jsPath).pipe(res);
+    }
+  }
+
+  res.writeHead(404, { 'Content-Type': 'text/plain' });
+  res.end('Nem talalhato');
 });
 
 server.listen(Port, () => {
-  console.log(`Biztonsagos atiranyito szerver fut a ${Port} porton!`);
+  console.log(`A Divian szerver sikeresen elindult a ${Port} porton!`);
 });
