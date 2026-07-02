@@ -9,4 +9,5 @@ COPY . .
 
 EXPOSE 10000
 
-CMD ["npm", "run", "forwarder"]
+CMD ["npm", "start"]
+
