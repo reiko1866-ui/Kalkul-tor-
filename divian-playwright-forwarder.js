@@ -731,7 +731,7 @@ function buildPlaywrightLaunchOptions() {
     envFlagForwarder("DIVIAN_PLAYWRIGHT_NO_CHANNEL", false) ||
     String(process.env.DIVIAN_PLAYWRIGHT_CHANNEL || "").toLowerCase() === "bundled";
   if (!useBundled) {
-    opts.channel = process.env.DIVIAN_PLAYWRIGHT_CHANNEL || "chrome";
+    opts.channel = process.env.DIVIAN_PLAYWRIGHT_CHANNEL || "chromium";
   }
   return opts;
 }
@@ -744,13 +744,13 @@ async function start() {
   if (launchOpts.channel) {
     console.log("[Init] Playwright böngésző csatorna:", launchOpts.channel);
   } else {
-    console.log("[Init] Playwright beépített Chromium (nem a rendszer Chrome)");
+    console.log("[Init] Playwright beépített Chromium (nem a rendszer Chromium)");
   }
   const context = await chromium.launchPersistentContext(userDataDir, launchOpts).catch(async (err) => {
     const msg = String(err?.message || err);
     if (!launchOpts.channel && /executable doesn't exist/i.test(msg)) {
-      console.warn("[Init] Beepitett Chromium hianyzik — rendszer Chrome (channel: chrome)…");
-      const fallback = { ...launchOpts, channel: process.env.DIVIAN_PLAYWRIGHT_CHANNEL || "chrome" };
+      console.warn("[Init] Beepitett Chromium hianyzik — rendszer Chromium (channel: chromium)…");
+      const fallback = { ...launchOpts, channel: process.env.DIVIAN_PLAYWRIGHT_CHANNEL || "chromium" };
       delete fallback.executablePath;
       return chromium.launchPersistentContext(userDataDir, fallback);
     }
