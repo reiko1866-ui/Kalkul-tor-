@@ -2409,8 +2409,11 @@ const server = require('http').createServer((req, res) => {
     return;
   }
 
-  // 2. Minden más kérést továbbítunk a cél szerverre
-  proxy.web(req, res, { target: 'http://localhost:3000' }, (err) => {
+  // 2. Minden kérést egyből a Divián hivatalos tervezőjére irányítunk át
+  proxy.web(req, res, { 
+    target: 'https://designer.cyncly.com',
+    changeOrigin: true
+  }, (err) => {
     console.error('Proxy hiba:', err);
     res.writeHead(500, { 'Content-Type': 'text/plain' });
     res.end('Szerver oldali hiba történt a továbbítás közben.');
@@ -2420,3 +2423,4 @@ const server = require('http').createServer((req, res) => {
 server.listen(Port, () => {
   console.log(`A könnyű proxy szerver sikeresen fut a ${Port} porton!`);
 });
+      
