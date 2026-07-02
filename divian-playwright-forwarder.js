@@ -2397,3 +2397,12 @@ start().catch((err) => {
   console.error("Fatal error:", err);
   process.exit(1);
 });
+const Port = process.env.PORT || 10000;
+const server = http.createServer((req, res) => {
+    res.writheHead(200, { ' Content-Type': 'text/plain' });
+    res.end('Divian forwarder elben van es fut!\n');
+});
+server.listen(Port, '0.0.0.0', () => {
+    console.log(`[Render] Kamubanda (port) sikeresen megnyitva a ${Port} porton!`);
+});
+
