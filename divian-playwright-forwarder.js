@@ -724,8 +724,13 @@ function buildPlaywrightLaunchOptions() {
       "--disable-features=IsolateOrigins,site-per-process",
       "--start-maximized",
       "--use-fake-ui-for-media-stream",
-      "--enable-speech-input"
-    ]
+      "--enable-speech-input",
+      "--disable-gpu",
+      "--disable-dev-shm-usage",
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--js-flags=--max-old-space-size=192"
+    ] 
   };
 }
 
