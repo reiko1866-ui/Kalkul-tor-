@@ -713,7 +713,7 @@ function envFlagForwarder(name, defaultVal) {
 }
 
 function buildPlaywrightLaunchOptions() {
-  const opts = {
+  return {
     headless: false,
     ignoreHTTPSErrors: true,
     userAgent: DEFAULT_USER_AGENT,
@@ -727,13 +727,6 @@ function buildPlaywrightLaunchOptions() {
       "--enable-speech-input"
     ]
   };
-  const useBundled =
-    envFlagForwarder("DIVIAN_PLAYWRIGHT_NO_CHANNEL", false) ||
-    String(process.env.DIVIAN_PLAYWRIGHT_CHANNEL || "").toLowerCase() === "bundled";
-  if (!useBundled) {
-    opts.channel = process.env.DIVIAN_PLAYWRIGHT_CHANNEL || "chromium";
-  }
-  return opts;
 }
 
 async function start() {
@@ -741,21 +734,8 @@ async function start() {
   console.log("[Init] Playwright profil:", userDataDir);
   console.log("[Init] Üzleti fiókok fájl:", AUTH_ACCOUNTS_FILE);
   const launchOpts = buildPlaywrightLaunchOptions();
-  if (launchOpts.channel) {
-    console.log("[Init] Playwright böngésző csatorna:", launchOpts.channel);
-  } else {
-    console.log("[Init] Playwright beépített Chromium (nem a rendszer Chromium)");
-  }
-  const context = await chromium.launchPersistentContext(userDataDir, launchOpts).catch(async (err) => {
-    const msg = String(err?.message || err);
-    if (!launchOpts.channel && /executable doesn't exist/i.test(msg)) {
-      console.warn("[Init] Beepitett Chromium hianyzik — rendszer Chromium (channel: chromium)…");
-      const fallback = { ...launchOpts, channel: process.env.DIVIAN_PLAYWRIGHT_CHANNEL || "chromium" };
-      delete fallback.executablePath;
-      return chromium.launchPersistentContext(userDataDir, fallback);
-    }
-    throw err;
-  });
+  console.log("[Init] Playwright beépített Chromium");
+  const context = await chromium.launchPersistentContext(userDataDir, launchOpts);
 
   console.log("Playwright figyeles elindult. Jelentkezz be a Cyncly oldalra ebben az ablakban.");
 
