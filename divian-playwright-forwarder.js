@@ -2397,10 +2397,22 @@ start().catch((err) => {
   console.error("Fatal error:", err);
   process.exit(1);
 });
-const expressport = process.env.PORT || 10000;
-require('http').createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-  res.end('<h1>Divian Háttérfolyamat</h1><p>A szerver sikeresen fut, a háttérszolgáltatások aktívak.</p>');
-}).listen(expressport, () => {
-  console.log(`Szerver online a ${expressport} porton.`);
-});
+(() => {
+  const expressport = process.env.PORT || 10000;
+  const httpProxy = require('http-proxy');
+  const internalProxy = httpProxy.createProxyServer({});
+
+  require('http').createServer((req, res) => {
+    // Minden beérkező kérést átdobunk a belső 7331-es (vagy 73321-es) portra
+    internalProxy.web(req, res, { 
+      target: 'http://127.0.0.1:7331',
+      changeOrigin: true
+    }, (err) => {
+      console.error('Belső proxy hiba:', err);
+      res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+      res.end('A belső folyamat még nem indult el vagy nem elérhető.');
+    });
+  }).listen(expressport, () => {
+    console.log(`Külső-belső híd aktív a ${expressport} porton.`);
+  });
+})();
