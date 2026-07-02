@@ -2398,21 +2398,15 @@ start().catch((err) => {
   process.exit(1);
 });
 const Port = process.env.PORT || 10000;
-const httpProxy = require('http-proxy');
-const proxy = httpProxy.createProxyServer({});
 
 const server = require('http').createServer((req, res) => {
-  // Minden kérést egyenesen a Divián hivatalos tervezőjére dobunk át
-  proxy.web(req, res, { 
-    target: 'https://planner.cyncly-idealspaces.com',
-    changeOrigin: true
-  }, (err) => {
-    console.error('Proxy hiba:', err);
-    res.writeHead(500, { 'Content-Type': 'text/plain' });
-    res.end('Hiba a tovabbitas soran.');
+  // Nem proxy-zunk, hanem a böngészőnek mondjuk meg, hogy ugorjon a pontos tervezőre
+  res.writeHead(301, {
+    'Location': 'https://planner.cyncly-idealspaces.com/hu/designer'
   });
+  res.end();
 });
 
 server.listen(Port, () => {
-  console.log(`Proxy szerver fut a ${Port} porton!`);
+  console.log(`Biztonsagos atiranyito szerver fut a ${Port} porton!`);
 });
