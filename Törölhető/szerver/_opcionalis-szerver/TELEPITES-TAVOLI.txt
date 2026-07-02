@@ -1,0 +1,87 @@
+Divian — TÁVOLI ELÉRÉS (100+ km)
+=================================
+
+FONTOS
+------
+Az irodai gép IP-je (192.168.x.x) és a localhost CSAK helyben működik.
+100 km-re: központi gép az INTERNETEN kell legyen — domain vagy fix tunnel.
+
+A „552 — nincs tárhely” hiba = a domain parkol, nincs mögötte szerver.
+Megoldás: VPS (virtuális szerver) VAGY Cloudflare Tunnel + domain.
+
+================================================================================
+AJÁNLOTT: VPS + DOMAIN (állandó, megbízható)
+================================================================================
+
+1) RENDELJ VPS-T (pl. Tárhely.Eu „Virtuális szerver”, min. 2 GB RAM, Ubuntu 22/24)
+   - NEM elég a „parkolt domain” / sima webtárhely — kell VPS root hozzáférés.
+
+2) DOMAIN
+   - pl. megrendelo.divian.hu
+   - DNS: A rekord → VPS nyilvános IP címe (a szolgáltatótól kapod)
+
+3) TELEPÍTÉS A VPS-EN (Linux, SSH)
+
+   Másold fel a projektet (git / zip / scp), majd:
+
+   cd /opt/divian
+   cp config/szerver.vps.env.example config/szerver.env
+   nano config/szerver.env
+     → DIVIAN_PUBLIC_URL=https://megrendelo.divian.hu
+
+   chmod +x deploy/install-linux-vps.sh
+   sudo ./deploy/install-linux-vps.sh
+
+   Ez telepíti: Docker, build, indítás, Caddy HTTPS.
+
+4) BÖNGÉSZŐ
+   https://megrendelo.divian.hu/dashboard.html
+   Bejelentkezés kötelező.
+
+5) ADATOK A VPS-EN
+   Docker volume: /var/lib/docker/volumes/.../divian-data
+   Mentés: rendszeres snapshot / backup a szolgáltatónál.
+
+================================================================================
+ALTERNATÍVA: CLOUDFLARE TUNNEL (ha van mindig bekapcsolt gép)
+================================================================================
+
+Ha van egy gép az irodában (vagy VPS), ami 0–24 fut:
+
+1) Domain DNS át Cloudflare-re (ingyenes)
+2) Telepítsd: cloudflared (https://developers.cloudflare.com/cloudflare-one/)
+3) Lásd: deploy/CLOUDFLARE-TUNNEL.txt
+4) Indítás: inditas-szerver-tunnel.bat (Windows)
+
+Előny: nem kell nyitni portot a routeren.
+Hátrány: a gépnek folyamatosan futnia kell.
+
+================================================================================
+MIT NEM ÉRDEMES (100 km-re)
+================================================================================
+
+- localhost:17321
+- 192.168.x.x:17321
+- inditas-link.bat ideiglenes trycloudflare link (változik, megszakad)
+- Parkolt domain böngészőben (552 hiba)
+
+================================================================================
+CYNCly ÉLŐ ÁTKÉRÉS
+================================================================================
+
+Központi szerveren: dashboard + Cyncly iframe (mindenki a saját böngészőjében
+jelentkezik be a Cyncly-be).
+
+Automatikus tételátkérés Playwright-tal: csak azon a gépen, ahol INDITAS.bat
+(forwarder) fut — ez NEM kell a távoli megrendelő mentéshez.
+
+================================================================================
+GYORS ELLENŐRZÉS
+================================================================================
+
+https://TE-DOMAIN/health  →  ok: true, serverMode: central
+
+Windows teszt (iroda, fejlesztés): inditas-szerver.bat + C:\DivianSzerver\data
+Éles távoli: VPS + deploy/install-linux-vps.sh
+
+Kapcsolat: TELEPITES-SZERVER.txt, deploy/

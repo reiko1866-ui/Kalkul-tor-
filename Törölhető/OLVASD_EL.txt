@@ -1,0 +1,18 @@
+Törölhető mappa
+================
+
+Ide kerultek azok a fajlok, amiket a napi INDITAS.bat / arajanlat nem hasznal.
+Ha minden rendben megy, a teljes mappa torolheto.
+
+Napi inditas: INDITAS.bat
+
+Almappak:
+  szerver/          — kozponti szerver, tunnel, auth API
+  regi-inditok/     — regi batch inditok, static-server, parancsikonok
+  frissites-csomag/ — Budaors mentes / zip keszites
+  dokumentacio/     — regi telepitesi leirasok, peldak
+  regi-modulok/     — konyhatervezo, bovitmenyek, regi Cyncly CLI
+  scripts/          — fejlesztoi / teszt scriptek
+
+Utolso rendezes: 2026. 07. 01. 16:04:04
+Osszesen a mappaban: 272 fajl

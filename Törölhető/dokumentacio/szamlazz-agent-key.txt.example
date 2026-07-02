@@ -1,0 +1,11 @@
+# Szamlazz.hu Szamla Agent kulcs — SAJAT TESZT vagy ELES fiok
+#
+# 1. Masold ide a kulcsot (egy sor, kisbetű)
+# 2. Nevezd at: szamlazz-agent-key.txt
+# 3. A fajl NEM kerul gitbe (.gitignore)
+#
+# Tesztfiók: a Szamlazz.hu vezérlőpulton kapcsold be a Tesztüzemet.
+# Indítás: inditas-teszt.bat
+#
+# PELDA (NE EZT HASZNALD):
+# abc123xyz456...

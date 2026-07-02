@@ -1,0 +1,27 @@
+================================================================================
+  DIVIAN / KONYHA · MEGRENDELŐLAP – Pendrive csomag
+================================================================================
+
+Másold rá ezt a teljes „pendrive-megrendelo” mappát az USB-stickre (pendrive).
+Ez NEM tartalmaz személyes adatot – így nyomtatva vagy kézzel kitöltve használható.
+
+Mit tartalmaz?
+  • Megrendelo-lap.html           – Megrendelőlap böngészőben (internet nem kell).
+  • Megrendelo-lap-nyitasa.bat    – Dupla klikk: megnyitja az űrlapot az alapértelmezett böngészőben.
+
+Hogyan használd?
+
+  1) Dupla katt „Megrendelo-lap-nyitasa.bat”, vagy közvetlenül „Megrendelo-lap.html” (Chrome / Edge ajánlott).
+  2) Töltsd ki az adatmezőket.
+  3) Ctrl + P → „Mentés PDF-ként”, vagy nyomtatóra küldés.
+  4) A „Nyomtatási előnézet”-ben ellenőrizd: háttér és színek bekapcsolva,
+     ha szeretnéd a szürke rács megjelenését papíron („Háttérgrafikák”).
+
+Automatikus, kitöltött PDF / teljes tételes megrendelés:
+  Ehhez nyisd meg a gépen lévő Divian megrendelő programot („arajanlat.html”):
+  állítsd be a tételeket, majd Mentés → Export → PDF mentés.
+
+Frissítés:
+  Ha a programot frissíted, másold rá újra ezt a mappát a pendrivera igény szerint.
+
+================================================================================

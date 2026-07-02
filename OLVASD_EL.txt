@@ -1,0 +1,14 @@
+Divian Kalkulator
+=================
+
+INDITAS.bat  — napi hasznalat (tervezo + arajanlat)
+
+Elso alkalom:
+  install-fuggosegek.bat
+  Google Chrome: https://google.com/chrome
+
+Leallitas: leallitas-17321.bat
+
+---
+Felesleges fajlok: Törölhető\ mappa (torolheto, ha minden megy)
+  Almappak: szerver, regi-inditok, frissites-csomag, dokumentacio, regi-modulok, scripts

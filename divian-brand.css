@@ -1,0 +1,87 @@
+/**
+ * Divian Konyhaműhely — 2026 arculati rendszer
+ * Bordó · mustár · ink · slate
+ */
+:root {
+  --divian-burgundy: #800040;
+  --divian-burgundy-deep: #5c002e;
+  --divian-burgundy-mid: #6b0036;
+  --divian-burgundy-soft: rgba(128, 0, 64, 0.1);
+  --divian-burgundy-line: rgba(128, 0, 64, 0.18);
+  --divian-mustard: #f3bf35;
+  --divian-mustard-deep: #c48f00;
+  --divian-mustard-soft: rgba(243, 191, 53, 0.16);
+  --divian-mustard-glow: rgba(243, 191, 53, 0.28);
+  --divian-ink: #1a1c21;
+  --divian-slate: #2d3a42;
+  --divian-slate-mid: #3a4d58;
+  --divian-slate-deep: #1f2830;
+  --divian-green: #9c9e00;
+  --divian-green-deep: #7d7e00;
+  --divian-green-dark: #626400;
+  --divian-green-soft: rgba(156, 158, 0, 0.12);
+  --divian-cream: #faf8f4;
+  --divian-surface: #ffffff;
+
+  --bg: #eceef2;
+  --bg-soft: #f6f7f9;
+  --card: rgba(255, 255, 255, 0.98);
+  --text: #2b3632;
+  --muted: #6e7d76;
+  --primary: var(--divian-burgundy);
+  --primary-soft: #9a1454;
+  --line: rgba(26, 28, 33, 0.11);
+  --shadow-sm: 0 2px 10px rgba(26, 28, 33, 0.06);
+  --shadow-md: 0 14px 36px rgba(26, 28, 33, 0.1);
+  --shadow-lg: 0 22px 52px rgba(26, 28, 33, 0.14);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --font: "Manrope", system-ui, -apple-system, sans-serif;
+  --header-gradient: linear-gradient(
+    102deg,
+    var(--divian-ink) 0%,
+    var(--divian-slate-deep) 42%,
+    var(--divian-slate-mid) 100%
+  );
+  --card-gradient: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(250, 248, 244, 0.94) 55%,
+    rgba(246, 247, 250, 0.92) 100%
+  );
+  --accent-bar: linear-gradient(
+    180deg,
+    var(--divian-burgundy) 0%,
+    var(--divian-burgundy-mid) 45%,
+    var(--divian-mustard-deep) 100%
+  );
+}
+
+/* Űrlapmezők — egységes Divian fókusz */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+select,
+textarea {
+  font-family: var(--font);
+  border: 1px solid var(--divian-burgundy-line);
+  border-radius: var(--radius-sm);
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: rgba(128, 0, 64, 0.45);
+  box-shadow: 0 0 0 3px rgba(128, 0, 64, 0.12);
+}
+
+#activeStoreBadge {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--divian-mustard);
+  letter-spacing: 0.02em;
+}

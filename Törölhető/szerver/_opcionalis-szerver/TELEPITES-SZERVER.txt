@@ -1,0 +1,100 @@
+Divian — központi szerver telepítés
+====================================
+
+CÉL
+----
+Egy gépen fut minden: árajánlat, admin, mentések, auth.
+A bolt gépeiről böngészővel: https://TE-DOMAIN/dashboard.html
+
+GYORS INDÍTÁS (Windows szerver)
+-------------------------------
+1. Másold: config\szerver.env.example → config\szerver.env
+2. Szerkeszd config\szerver.env:
+   - DIVIAN_PUBLIC_URL=https://megrendelo.divian.hu  (ha van domain)
+   - DIVIAN_DATA_ROOT=C:\DivianSzerver\data
+   - DIVIAN_ORDER_MIRROR_DIR=\\fajl-szerver\...  (opcionális SMB tükör)
+3. Futtasd: inditas-szerver.bat
+4. Tűzfal: tools\open-firewall-17321.bat (admin)
+5. Böngésző: http://SZERVER-IP:17321/dashboard.html
+
+DOCKER (Linux VPS)
+------------------
+1. cp config/szerver.env.example config/szerver.env && szerkeszd
+2. docker compose up -d --build
+3. nginx + SSL: deploy/nginx-divian.conf.example
+
+ADATMAPPÁK (központosítva)
+--------------------------
+Alapértelmezés DIVIAN_SERVER_MODE=1 mellett:
+  C:\DivianSzerver\data\orders     — mentett megrendelők (JSON, PDF)
+  C:\DivianSzerver\data\profile    — bejelentkezés, auth fiókok
+  C:\DivianSzerver\data\excel\     — Excel exportok
+  C:\DivianSzerver\data\pdf\       — szállítólevél PDF
+
+Környezeti változók: config\szerver.env
+
+KI MIT HASZNÁL
+--------------
+| Szerep              | Indítás              |
+|---------------------|----------------------|
+| Központi szerver    | inditas-szerver.bat  |
+| Napi munka (Cyncly) | INDITAS.bat          |
+| Csak teszt helyben  | inditas-teszt.bat    |
+
+Központi szerveren a Cyncly tervező a böngésződben fut (iframe) —
+nem kell Playwright minden gépen.
+
+Élő Cyncly → árajánlat automatikus átkérés: csak INDITAS.bat
+(Playwright forwarder) azon a gépen, ahol tervezel.
+
+HTTPS / DOMAIN
+--------------
+1. nginx vagy Caddy a 443-as porton
+2. DIVIAN_PUBLIC_URL=https://domain nélkül perjel
+3. Szerver bind: DIVIAN_BIND_HOST=127.0.0.1 (nginx mögött)
+
+BIZTONSÁG
+---------
+- Bejelentkezés kötelező (divian-auth)
+- Jelszavak: %USERPROFILE%\.divian-kalkulator\divian-auth-accounts.json
+  vagy DIVIAN_USER_DATA_DIR\divian-auth-accounts.json
+- Élesben: DIVIAN_AUTH_OFF soha ne legyen 1
+- Számlázz agent kulcs: szamlazz-agent-key.txt (ne tedd gitbe)
+
+SZÁMLÁZZ
+--------
+Helyi előnézet (alap): SZAMLAZZ_LOCAL_ONLY=1
+Éles API: SZAMLAZZ_LOCAL_ONLY=0 + szamlazz-agent-key.txt
+
+MENTÉS / TÜKÖR
+--------------
+F: meghajtó helyett SMB:
+  DIVIAN_ORDER_MIRROR_DIR=\\szerver\Automata megrendelők 2026
+Kikapcsolás: DIVIAN_ORDER_MIRROR_OFF=1
+
+FRISSÍTÉS
+---------
+Szerveren: frissites\ csomag + tools\apply-update.js
+Vagy git pull + npm install
+
+ELLENŐRZÉS
+----------
+http://localhost:17321/health
+→ serverMode: "central", orderSaveDir: ...
+
+TÁVOLI ELÉRÉS (100 km — ez a gép a fő szerver)
+-----------------------------------------------
+  inditas-szerver-tavoli.bat
+
+  • Indítsd ezen a gépen (bekapcsolva maradjon + ne zárd be az ablakot)
+  • Megjelenik egy https://….trycloudflare.com/dashboard.html link
+  • Másold ki → divian-public-link.txt — ezt nyisd 100 km-ről is
+  • Újraindítás után a link változhat (újra másold ki)
+
+  Állandó saját domain (később):
+  deploy\CLOUDFLARE-TUNNEL.txt — Cloudflare Tunnel + domain
+
+  Parkolt domain (552 hiba) ≠ működő szerver — tárhely vagy tunnel kell.
+
+  irodán belül (LAN): http://SZERVER-IP:17321/dashboard.html
+  tools\open-firewall-17321.bat

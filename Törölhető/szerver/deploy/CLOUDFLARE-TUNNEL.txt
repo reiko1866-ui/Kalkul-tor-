@@ -1,0 +1,43 @@
+Cloudflare Tunnel — állandó domain (opcionális)
+===============================================
+
+Ha a trycloudflare.com link minden indításkor változik, és saját
+aldomain kell (pl. megrendelo.divian.hu), Cloudflare Tunnel a legjobb
+megoldás — a fő gép maradhat az irodában.
+
+ELŐFELTÉTEL
+-----------
+• Cloudflare ingyenes fiók: https://dash.cloudflare.com
+• A domain DNS Cloudflare-nél (átvitel vagy csak névszerver)
+
+LÉPÉSEK (egyszerűsítve)
+-----------------------
+1. Telepítsd: winget install Cloudflare.cloudflared
+   (vagy: npx cloudflared — már működik az inditas-szerver-tavoli.bat-ban)
+
+2. Cloudflare Zero Trust → Networks → Tunnels → Create tunnel
+
+3. Név: divian-megrendelo → Install connector → másold a TOKEN-t
+
+4. Public Hostname:
+   • Subdomain: megrendelo (vagy kalkulator)
+   • Domain: divian.hu
+   • Service: http://127.0.0.1:17321
+
+5. config\szerver.local.env fájlba:
+   CLOUDFLARE_TUNNEL_TOKEN=ide_a_token
+   CLOUDFLARE_TUNNEL_HOSTNAME=https://megrendelo.divian.hu
+   DIVIAN_PUBLIC_URL=https://megrendelo.divian.hu
+
+6. inditas-szerver-tavoli.bat — állandó URL, nem változik
+
+FONTOS
+------
+• A gép legyen bekapcsolva és fusson az inditas-szerver-tavoli.bat
+• Windows: Energiagazdálkodás → „Sose aludjon” (szerver gépen)
+• UPS ajánlott
+
+PARKOLT DOMAIN (552)
+--------------------
+A Tárhely.Eu „nincs tárhely” oldal normális, ha nincs webcsomag.
+Cloudflare Tunnel NEM igényel klasszikus webtárhelyet — csak DNS-t.

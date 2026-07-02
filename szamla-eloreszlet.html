@@ -1,0 +1,1949 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Számla előkészítő — I. és II. részlet · Divian</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="divian-brand.css?v=20260604s" />
+  <link rel="stylesheet" href="styles.css?v=20260604s" />
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="divian-cabinet-codes.js?v=20260617"></script>
+  <script src="divian-megrendelo-import.js?v=20260619b"></script>
+  <script src="partial-invoice-view.js?v=20260618a"></script>
+  <style>
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 1rem 1.25rem 2rem;
+    }
+    h1 {
+      font-size: 1.35rem;
+      margin: 0 0 0.35rem;
+      color: var(--divian-burgundy);
+      letter-spacing: 0.02em;
+    }
+    .hint {
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin: 0 0 1rem;
+    }
+    .panel {
+      background: var(--card);
+      border-radius: var(--radius-md);
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--divian-burgundy-line);
+      box-shadow: var(--shadow-sm);
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.5rem;
+      margin-top: 0.75rem;
+    }
+    button {
+      padding: 0.45rem 0.85rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--divian-burgundy-line);
+      background: #fff;
+      cursor: pointer;
+      font: inherit;
+      font-weight: 600;
+    }
+    button.primary {
+      background: linear-gradient(135deg, var(--divian-burgundy) 0%, var(--divian-burgundy-mid) 100%);
+      color: #fff;
+      border-color: var(--divian-burgundy-deep);
+    }
+    #status {
+      margin-top: 0.5rem;
+      font-size: 0.9rem;
+      color: var(--divian-burgundy);
+      font-weight: 600;
+    }
+    #previewHost {
+      background: #fff;
+      padding: 1rem 1.1rem 1.5rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--divian-burgundy-line);
+      box-shadow: var(--shadow-sm);
+    }
+    #previewHost .pi-sheet { margin-bottom: 0; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Számla előkészítő — I. és II. részlet</h1>
+    <p class="hint">
+      Fájl betöltés: <strong>JSON</strong> (Mentés export), <strong>PDF</strong> vagy <strong>Excel</strong> megrendelőlap
+      (közvetlen tartalom kinyerés — régi PDF-ek is), <strong>Excel</strong> szállítólevél. Díjbekérő / I.+II. részlet és szállítólevél:
+      megrendelőlap PDF/Excel/JSON. PDF-nél a Mentett megrendelők JSON csak tartalék (ha a PDF nem olvasható).
+      <strong>Számla összeg:</strong> a teljes összeg az <strong>I. + II. részlet együtt</strong> (státussorban „Teljes számla”).
+      Egy részlet kb. a fele. A megrendelőlap <em>végösszegéből</em> a szerelési díj (pl. 300 000 Ft) nem kerül a számlára.
+    </p>
+
+    <div class="panel">
+      <label>
+        Árajánlat fájl (JSON, PDF vagy Excel)
+        <input
+          id="jsonFile"
+          type="file"
+          accept=".json,.pdf,.xlsx,.xls,application/json,application/pdf"
+          style="display: block; margin-top: 0.35rem"
+        />
+      </label>
+      <div class="actions">
+        <button type="button" id="reloadBtn">Betöltés / előnézet</button>
+        <button type="button" id="printBtn" class="primary">Nyomtatás / PDF (I.+II.)</button>
+        <button type="button" id="deliveryNoteBtn">Szállítólevél előnézet</button>
+        <button type="button" id="deliveryNotePdfBtn" class="primary">Szállítólevél PDF</button>
+        <button type="button" id="deliveryNoteExcelBtn">Szállítólevél Excel</button>
+        <button type="button" id="excelBtn">Számla Excel (I.+II.)</button>
+        <select id="partSelect" aria-label="Előnézet részlet">
+          <option value="1">Előnézet: I. részlet</option>
+          <option value="2">Előnézet: II. részlet</option>
+          <option value="both">I. + II. egymás alatt</option>
+        </select>
+      </div>
+      <p id="status"></p>
+    </div>
+
+    <div class="panel" id="previewPanel" hidden>
+      <div id="previewHost"></div>
+    </div>
+  </div>
+
+  <script>
+    const PARTIAL_RATE = 0.5;
+    const VAT_PCT = 27;
+    const VAT_RATE = 0.27;
+    let loadedPayload = null;
+    let loadedDeliveryNoteData = null;
+    let lastData1 = null;
+    let lastData2 = null;
+
+    function resolveForwarderBase() {
+      if (typeof PartialInvoiceView !== "undefined" && PartialInvoiceView.resolveDivianForwarderBase) {
+        return PartialInvoiceView.resolveDivianForwarderBase();
+      }
+      return "http://localhost:17321";
+    }
+
+    function extractQuoteNumberFromText(text) {
+      const m = String(text || "").match(/MRDH-[A-Z]+-\d{2}-\d+/i);
+      return m ? m[0].toUpperCase() : "";
+    }
+
+    function parseHufNumberCell(value) {
+      const digits = String(value || "").replace(/[^\d]/g, "");
+      return Math.max(0, Math.round(Number(digits) || 0));
+    }
+
+    function parseQtyCell(value) {
+      const m = String(value || "").match(/[\d]+(?:[.,]\d+)?/);
+      if (!m) return 1;
+      return Math.max(0, Number(String(m[0]).replace(",", ".")) || 0) || 1;
+    }
+
+    function parseDotsDateToIso(value) {
+      const m = String(value || "").trim().match(/^(\d{4})\.(\d{2})\.(\d{2})\.?/);
+      if (!m) return String(value || "").trim();
+      return m[1] + "-" + m[2] + "-" + m[3];
+    }
+
+    function normalizeMegrendeloLabel(value) {
+      return String(value || "")
+        .trim()
+        .replace(/:+$/, "")
+        .replace(/\s+/g, " ");
+    }
+
+    function emptyMegrendeloSummary() {
+      return {
+        grossTotal: 0,
+        finalTotal: 0,
+        kitchenTotal: 0,
+        grandTotal: 0,
+        shippingFee: 0,
+        assemblyFee: 0,
+        discountPct: 0,
+        discountHuf: 0,
+        fromFooter: false
+      };
+    }
+
+    function parseHufFromRowCells(cells, startIdx) {
+      for (let j = startIdx; j < cells.length; j++) {
+        const v = parseHufNumberCell(cells[j]);
+        if (v > 0) return v;
+      }
+      return 0;
+    }
+
+    function applyMegrendeloSummaryLabel(summary, label, value, rowJoined) {
+      const lab = normalizeMegrendeloLabel(label).toLowerCase();
+      const joined = String(rowJoined || "").toLowerCase();
+      const v = parseHufNumberCell(value);
+
+      if ((lab.includes("szállítási díj") || lab.includes("kiszállítási díj")) && v > 0) {
+        summary.shippingFee = v;
+        summary.fromFooter = true;
+      }
+      if ((lab.includes("szerelés") || lab.includes("szerelési díj")) && v >= 1000) {
+        summary.assemblyFee = v;
+        summary.fromFooter = true;
+      }
+      if (lab.includes("összesen konyhabútor és kiegészítők") && v > 0) {
+        summary.kitchenTotal = v;
+        summary.fromFooter = true;
+      }
+      if (
+        (lab.includes("kedvezmény nélküli") ||
+          lab.includes("listaár összesen") ||
+          lab.includes("listaar osszesen")) &&
+        v > 0
+      ) {
+        summary.grossTotal = v;
+        summary.fromFooter = true;
+      }
+      if (lab.includes("végösszeg") && lab.includes("szállítással")) {
+        const embedded = parseHufNumberCell(
+          label.replace(/.*v[eé]gösszeg\s+sz[aá]ll[ií]t[aá]ssal\s*:?\s*/i, "")
+        );
+        const amt = embedded > 100000 ? embedded : v > 100000 ? v : 0;
+        if (amt > 0) {
+          summary.grandTotal = amt;
+          summary.fromFooter = true;
+        }
+      }
+      if (lab.includes("kedvezmény összege") && v > 0) {
+        summary.discountHuf = v;
+        summary.fromFooter = true;
+      }
+      if (
+        joined.includes("végösszeg") &&
+        (joined.includes("bruttó") || joined.includes("szállítással")) &&
+        v > 0
+      ) {
+        summary.grandTotal = v;
+        summary.fromFooter = true;
+      }
+      const pctIn = (label + " " + rowJoined).match(/(\d{1,2})\s*%/);
+      if (pctIn && Number(pctIn[1]) > 0 && Number(pctIn[1]) <= 50) {
+        summary.discountPct = Number(pctIn[1]);
+      }
+    }
+
+    function finalizeMegrendeloSummary(summary) {
+      const ship = Math.max(0, summary.shippingFee || 0);
+      const asm = Math.max(0, summary.assemblyFee || 0);
+      const kitchen = Math.max(0, summary.kitchenTotal || 0);
+      const grand = Math.max(0, summary.grandTotal || 0);
+
+      if (kitchen > 0) {
+        if (grand > 0 && asm > 0 && Math.abs(grand - kitchen - asm) <= 1000) {
+          summary.finalTotal = kitchen + ship;
+        } else if (grand > 0 && ship > 0 && Math.abs(grand - kitchen - ship) <= 1000) {
+          summary.finalTotal = grand;
+        } else if (grand > 0 && grand >= kitchen) {
+          summary.finalTotal = grand;
+        } else {
+          summary.finalTotal = kitchen + ship;
+        }
+      } else if (grand > 0) {
+        summary.finalTotal = Math.max(0, grand - asm);
+      } else {
+        summary.finalTotal = 0;
+      }
+      if (summary.grossTotal <= 0 && summary.finalTotal > 0 && summary.discountHuf > 0) {
+        summary.grossTotal = summary.finalTotal + Math.max(0, summary.discountHuf);
+      }
+      return summary;
+    }
+
+    function parseMegrendeloSummaryFromAoA(aoa) {
+      const summary = emptyMegrendeloSummary();
+      for (const row of aoa || []) {
+        const cells = (row || []).map((c) => String(c ?? "").trim());
+        const rowJoined = cells.join(" ");
+        for (let i = 0; i < cells.length; i++) {
+          if (!cells[i]) continue;
+          applyMegrendeloSummaryLabel(summary, cells[i], cells[i + 1] || "", rowJoined);
+          if (normalizeMegrendeloLabel(cells[i]).toLowerCase().includes("végösszeg") && !summary.grandTotal) {
+            const v = parseHufFromRowCells(cells, i + 1);
+            if (v > 100000) {
+              summary.grandTotal = v;
+              summary.fromFooter = true;
+            }
+          }
+        }
+        if (/v[eé]gösszeg\s+sz[aá]ll[ií]t[aá]ssal/i.test(rowJoined) && !summary.grandTotal) {
+          const m = rowJoined.match(/v[eé]gösszeg\s+sz[aá]ll[ií]t[aá]ssal\s*:?\s*([\d\s]+)/i);
+          if (m) {
+            summary.grandTotal = parseHufNumberCell(m[1]);
+            summary.fromFooter = true;
+          }
+        }
+        const discRow = rowJoined.match(/összesen\s+(\d+)\s*%\s*kedvezm[eé]n/i);
+        if (discRow) summary.discountPct = Math.max(summary.discountPct, Number(discRow[1]) || 0);
+      }
+      return finalizeMegrendeloSummary(summary);
+    }
+
+    function parseMegrendeloSummaryFromText(text) {
+      if (typeof MegrendeloImport !== "undefined" && MegrendeloImport.parseMegrendeloSummaryFromText) {
+        return MegrendeloImport.parseMegrendeloSummaryFromText(text);
+      }
+      const summary = emptyMegrendeloSummary();
+      const t = String(text || "");
+      const pick = (re) => {
+        const m = t.match(re);
+        return m ? parseHufNumberCell(m[1]) : 0;
+      };
+      const ship = pick(/(?:Szállítási|Kiszállítási)\s*díj[:\s]*([\d\s.,]+)/i);
+      if (ship) summary.shippingFee = ship;
+      const asm = pick(/Szerel(?:és|ési\s*díj)[:\s]*([\d\s.,]+)/i);
+      if (asm) summary.assemblyFee = asm;
+      const kitchen = pick(/Összesen\s*konyhabútor\s*és\s*kiegészítők[:\s]*([\d\s.,]+)/i);
+      if (kitchen) summary.kitchenTotal = kitchen;
+      const grand =
+        pick(/Végösszeg\s*\(?\s*bruttó\s*\)?[:\s]*([\d\s.,]+)/i) ||
+        pick(/Végösszeg\s*Szállítással[:\s]*([\d\s.,]+)/i);
+      if (grand) summary.grandTotal = grand;
+      const gross =
+        pick(/Kedvezmény\s*nélküli\s*összeg[:\s]*([\d\s.,]+)/i) ||
+        pick(/Listaár\s*összesen[:\s]*([\d\s.,]+)/i);
+      if (gross) summary.grossTotal = gross;
+      const disc = pick(/Kedvezmény\s*összege[:\s]*([\d\s.,]+)/i);
+      if (disc) summary.discountHuf = disc;
+      const pctM = t.match(/(\d{1,2})\s*%\s*kedvezmény/i);
+      if (pctM) summary.discountPct = Number(pctM[1]);
+      if (summary.shippingFee || summary.kitchenTotal || summary.grandTotal) {
+        summary.fromFooter = true;
+      }
+      return finalizeMegrendeloSummary(summary);
+    }
+
+    function excelSerialOrDotsToIso(value) {
+      const raw = String(value ?? "").trim();
+      if (!raw) return "";
+      const dots = parseDotsDateToIso(raw);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dots)) return dots;
+      const n = Number(raw);
+      if (Number.isFinite(n) && n > 20000 && n < 60000) {
+        const utc = new Date(Date.UTC(1899, 11, 30) + Math.round(n) * 86400000);
+        return utc.toISOString().slice(0, 10);
+      }
+      return raw;
+    }
+
+    function extractCustomerFromMegrendeloFileName(fileName) {
+      if (typeof PartialInvoiceView !== "undefined" && PartialInvoiceView.extractCustomerHintFromImportPath) {
+        return PartialInvoiceView.extractCustomerHintFromImportPath(fileName);
+      }
+      const m = String(fileName || "").match(/\(([^)]+)\)\s*$/);
+      if (m && m[1].trim()) return m[1].trim();
+      const segments = String(fileName || "").split(/[/\\]/);
+      for (let i = segments.length - 1; i >= 0; i--) {
+        const seg = String(segments[i] || "").trim();
+        const folderM = seg.match(/^(.+?)\s*[—–-]\s*MRDH-/i);
+        if (folderM && folderM[1].trim()) return folderM[1].trim();
+      }
+      return "";
+    }
+
+    function isMegrendeloCustomerFieldLabel(rawLabel) {
+      const label = normalizeMegrendeloLabel(rawLabel).toLowerCase();
+      return (
+        label === "név" ||
+        label === "vevő neve" ||
+        label === "cím" ||
+        label === "cim" ||
+        label === "vevő címe" ||
+        label === "telefon" ||
+        label === "e-mail" ||
+        label === "email" ||
+        label === "email cím" ||
+        label === "email cim"
+      );
+    }
+
+    function isMegrendeloKitchenGridValue(value) {
+      const v = String(value || "")
+        .trim()
+        .toLowerCase();
+      if (!v || v === "-") return true;
+      if (/^korpusz\s*\(/i.test(v)) return true;
+      if (/^(felső|alsó|also|felso)\s+front/i.test(v)) return true;
+      if (/^munkalap/i.test(v)) return true;
+      if (/^fogantyú/i.test(v) || /^fogantyu/i.test(v)) return true;
+      if (/^falipanel/i.test(v)) return true;
+      if (/^konyha\s*típus/i.test(v)) return true;
+      return false;
+    }
+
+    function isPlausibleMegrendeloCustomerName(value) {
+      const v = String(value || "").trim();
+      if (!v || v === "-") return false;
+      if (isMegrendeloKitchenGridValue(v)) return false;
+      const low = v.toLowerCase();
+      if (/megrendel[oő]lap/.test(low)) return false;
+      if (/divian/i.test(low) && /konyha|megrendel/i.test(low)) return false;
+      if (
+        typeof PartialInvoiceView !== "undefined" &&
+        PartialInvoiceView.isDeliveryInvalidCustomerName &&
+        PartialInvoiceView.isDeliveryInvalidCustomerName(v)
+      ) {
+        return false;
+      }
+      return true;
+    }
+
+    function isPlausibleMegrendeloCustomerAddress(value) {
+      if (
+        typeof PartialInvoiceView !== "undefined" &&
+        PartialInvoiceView.isPlausibleCustomerAddress
+      ) {
+        return PartialInvoiceView.isPlausibleCustomerAddress(value);
+      }
+      const v = String(value || "").trim();
+      if (!v || v === "-" || v === "—") return false;
+      if (isMegrendeloKitchenGridValue(v)) return false;
+      if (/^10\d{2}\s+(felső|alsó|also|felso)\s+front/i.test(v)) return false;
+      if (/^[\d\s/+-]+$/.test(v)) return false;
+      return true;
+    }
+
+    function isPlaceholderCustomerField(value) {
+      const v = String(value || "").trim();
+      return !v || v === "-" || v === "—";
+    }
+
+    function cleanupMegrendeloCustomer(customer) {
+      if (!customer || typeof customer !== "object") return;
+      if (!isPlausibleMegrendeloCustomerName(customer.name)) customer.name = "";
+      if (!isPlausibleMegrendeloCustomerAddress(customer.address)) customer.address = "";
+      if (!customer.name && customer.email) {
+        const inferred =
+          typeof PartialInvoiceView !== "undefined" && PartialInvoiceView.inferCustomerNameFromEmail
+            ? PartialInvoiceView.inferCustomerNameFromEmail(customer.email)
+            : "";
+        if (inferred) customer.name = inferred;
+      }
+    }
+
+    function applyMegrendeloCustomerField(customer, rawLabel, rawValue) {
+      if (!isMegrendeloCustomerFieldLabel(rawLabel)) return;
+      const label = normalizeMegrendeloLabel(rawLabel).toLowerCase();
+      let value = String(rawValue || "")
+        .trim()
+        .replace(/^:+\s*/, "");
+      if (!value || value === "-") return;
+      if (label === "név" || label === "vevő neve") {
+        if (!customer.name && isPlausibleMegrendeloCustomerName(value)) customer.name = value;
+        return;
+      }
+      if (label === "cím" || label === "cim" || label === "vevő címe") {
+        if (!customer.address && isPlausibleMegrendeloCustomerAddress(value)) customer.address = value;
+        return;
+      }
+      if (label === "telefon") {
+        if (!customer.phone) customer.phone = value;
+        return;
+      }
+      if (label === "e-mail" || label === "email" || label === "email cím" || label === "email cim") {
+        if (!customer.email) customer.email = value;
+      }
+    }
+
+    function findNextMegrendeloPdfValueLine(pdfLines, startIdx) {
+      for (let i = startIdx; i < (pdfLines || []).length; i++) {
+        const t = String(pdfLines[i].text || "").trim();
+        if (!t) continue;
+        if (/^(Vevő|Telefon|E-?mail|Konyha|Mennyiség|Ajánlat|Áruház|Korpusz|Alsó|Felső|Munkalap|Fogantyú)/i.test(t)) {
+          return "";
+        }
+        if (isMegrendeloKitchenGridValue(t)) return "";
+        if (/^[\d\s]+Ft$/i.test(t)) return "";
+        if (/^MRDH-/i.test(t)) return "";
+        return t;
+      }
+      return "";
+    }
+
+    function enrichCustomerFromMegrendeloPdfLines(customer, pdfLines) {
+      const lines = pdfLines || [];
+      for (let i = 0; i < lines.length; i++) {
+        const t = String(lines[i].text || "").trim();
+        const parts = Array.isArray(lines[i].parts) ? lines[i].parts : [];
+
+        for (let p = 0; p < parts.length - 1; p++) {
+          applyMegrendeloCustomerField(customer, parts[p].str, parts[p + 1].str);
+        }
+
+        const inlinePatterns = [
+          [/^(Vevő neve|Név|Vásárló neve)\s*:?\s+(.+)$/i, "name"],
+          [/^(Vevő címe|Cím|Vásárló címe)\s*:?\s+(.+)$/i, "address"],
+          [/^(Telefon)\s*:?\s+(.+)$/i, "phone"],
+          [/^(E-?mail|Email cím)\s*:?\s+(.+)$/i, "email"]
+        ];
+        inlinePatterns.forEach(([re, field]) => {
+          const m = t.match(re);
+          if (!m || !m[2]) return;
+          const val = String(m[2]).trim();
+          if (!val || val === "-") return;
+          if (field === "name" && !isPlausibleMegrendeloCustomerName(val)) return;
+          if (field === "address" && !isPlausibleMegrendeloCustomerAddress(val)) return;
+          if (!customer[field]) customer[field] = val;
+        });
+
+        if (/^(Vevő neve|Név|Vásárló neve)\s*:?$/i.test(t) && !customer.name) {
+          const next = findNextMegrendeloPdfValueLine(lines, i + 1);
+          if (next) customer.name = next;
+        }
+        if (/^(Vevő címe|Cím|Vásárló címe)\s*:?$/i.test(t) && !customer.address) {
+          const next = findNextMegrendeloPdfValueLine(lines, i + 1);
+          if (next && isPlausibleMegrendeloCustomerAddress(next)) customer.address = next;
+        }
+      }
+    }
+
+    function normalizeMegrendeloLineText(name) {
+      return String(name || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function isMegrendeloAccessoryLineName(name) {
+      const t = normalizeMegrendeloLineText(name);
+      if (!t) return false;
+      if (t.includes("vagasi") || t.includes("vagas dij")) return true;
+      if (t === "szerel" || t.startsWith("szerel ")) return true;
+      if (/\b(szett|csomag)\b/.test(t) || t.includes("divian szett") || t.includes("led szett")) return true;
+      if (/^szett\s*[·•\-]/.test(t)) return true;
+      if (t.includes("csaptelep") || (t.includes("csap") && t.includes("telep"))) return true;
+      if (t.includes("talca") || t.includes("mosogato") || t.includes("mosogatogep")) return true;
+      if (/\bwhp\b/.test(t) || t.includes("whirlpool")) return true;
+      if (t.includes("suto") || t.includes("fozolap") || t.includes("parael") || t.includes("mikro")) {
+        return true;
+      }
+      if (
+        t.includes("vasalat") ||
+        t.includes("fiokrendez") ||
+        t.includes("labpedal") ||
+        t.includes("konzol") ||
+        t.includes("asztallab") ||
+        t.includes("hetich") ||
+        t.includes("blanco") ||
+        t.includes("bosch") ||
+        t.includes("evido")
+      ) {
+        return true;
+      }
+      if (t.includes("oldaltakaro") || t.includes("falipanel")) return true;
+      if (/^(lab|láb)$/i.test(String(name || "").trim()) || t.includes("labelo") || t.includes("labazati")) {
+        return true;
+      }
+      return false;
+    }
+
+    function extractCodeFromMegrendeloLineDescription(name) {
+      const s = String(name || "").trim();
+      if (!s) return "";
+      if (isMegrendeloAccessoryLineName(s)) return "";
+      const lower = normalizeMegrendeloLineText(s);
+      if (
+        lower.startsWith("lot") ||
+        lower.includes("takaro") ||
+        /^lab$/.test(lower) ||
+        lower.includes("labelo") ||
+        lower.includes("labazati") ||
+        lower.includes("szilikon") ||
+        lower.includes("butorlapbol")
+      ) {
+        return "";
+      }
+      const patterns = [
+        /^(SET_[A-Z0-9_]+)/i,
+        /^(LED_SET_[A-Z0-9_]+)/i,
+        /^(BOS-SZETT-\d+)/i,
+        /^(EVI-SZETT-\d+)/i,
+        /^(DIV-CSOM-[A-Z0-9-]+)/i,
+        /^(DIV-CSAP-[A-Z0-9-]+)/i,
+        /^(TDIV-[A-Z0-9-]+)/i,
+        /^(MO\d+_\d+)/i,
+        /^(ASZB\d+)/i,
+        /^(KMTB\d+)/i,
+        /^(EFT\d+F?)/i,
+        /^(FSL\d+)/i,
+        /^(F60E)\b/i,
+        /^(ASM\d+)/i,
+        /^(AF\d+)/i,
+        /^(AML\d+P?)/i,
+        /^(AKL)\b/i,
+        /^(KMTH\d+W?)/i,
+        /^(FKF\d+(?:\s+SZ)?)/i,
+        /^(FFM\d+)/i,
+        /^(FK\d+)/i,
+        /^(ATF\d+)/i,
+        /^([A-Z]{1,4}\d{1,3}[A-Z]?)\b/i
+      ];
+      for (const p of patterns) {
+        const m = s.match(p);
+        if (m) return String(m[1]).replace(/\s+/g, "").toUpperCase();
+      }
+      return "";
+    }
+
+    function isMegrendeloExcelAoA(aoa) {
+      if (!Array.isArray(aoa) || !aoa.length) return false;
+      return aoa.some((row) => {
+        const joined = (row || []).map((c) => String(c ?? "")).join(" ");
+        return (
+          joined.includes("MEGRENDEL") ||
+          String(row[0] || "").includes("Megrendelés száma") ||
+          String(row[3] || "").includes("Megrendelés száma")
+        );
+      });
+    }
+
+    function findMegrendeloItemTableColumns(aoa) {
+      for (let i = 0; i < aoa.length; i++) {
+        const cells = (aoa[i] || []).map((c) => normalizeMegrendeloLabel(c));
+        const qtyCol = cells.findIndex((c) => c === "Mennyiség" || c.startsWith("Mennyiség"));
+        const descCol = cells.findIndex((c) => c === "Leírás");
+        if (qtyCol >= 0 && descCol >= 0) {
+          const unitCol = cells.findIndex((c) => c.includes("Egységár"));
+          const totalCol = cells.findIndex((c) => c.includes("Összeg"));
+          return { headerRow: i, qtyCol, descCol, unitCol, totalCol };
+        }
+      }
+      return null;
+    }
+
+    function isMegrendeloItemStopRow(labelCells) {
+      const joined = labelCells.join(" ").toLowerCase();
+      if (!joined.trim()) return true;
+      if (joined.includes("az ajánlat") || joined.includes("az árajánlat")) return true;
+      if (joined.startsWith("előleg")) return true;
+      if (joined.startsWith("szállítási díj")) return true;
+      if (joined.includes("végösszeg")) return true;
+      if (joined.includes("jótállási")) return true;
+      return false;
+    }
+
+    function buildMegrendeloPayloadFromParts(parts, fileName) {
+      if (typeof MegrendeloImport !== "undefined" && MegrendeloImport.buildMegrendeloPayloadFromParts) {
+        const payload = MegrendeloImport.buildMegrendeloPayloadFromParts(parts, fileName);
+        return normalizePayloadForInvoice(payload);
+      }
+      const snapLines = (parts.snapLines || []).map((line) => {
+        const name = String(line.name || "").trim();
+        const code = String(line.code || "").trim() || extractCodeFromMegrendeloLineDescription(name);
+        const qty = Math.max(0, Number(line.qty) || 0);
+        const unit = Math.max(0, Math.round(Number(line.unit) || 0));
+        const total = Math.max(0, Math.round(Number(line.total) || 0)) || unit * qty;
+        return { code, name, qty, unit, total };
+      });
+
+      const selected = [];
+      const kiadvanyExtrasLines = [];
+      snapLines.forEach((line, idx) => {
+        const isKiadvany =
+          typeof PartialInvoiceView !== "undefined" &&
+          PartialInvoiceView.isInvoiceKiadvanyLine &&
+          PartialInvoiceView.isInvoiceKiadvanyLine(line);
+        if (isKiadvany) {
+          const kind =
+            typeof PartialInvoiceView.inferKiadvanyLineKind === "function"
+              ? PartialInvoiceView.inferKiadvanyLineKind(line)
+              : "";
+          kiadvanyExtrasLines.push({
+            code: line.code,
+            name: line.name,
+            qty: line.qty,
+            unit: line.unit,
+            ...(kind ? { kind } : {})
+          });
+          return;
+        }
+        if (!line.code) return;
+        const key = String(line.code || "XL" + idx).toUpperCase() + "#" + idx;
+        selected.push([key, { code: line.code, name: line.name, qty: line.qty }]);
+      });
+
+      let quoteNumber = String(parts.quoteNumber || "").trim();
+      if (!quoteNumber && fileName) quoteNumber = extractQuoteNumberFromText(fileName);
+
+      const kitchen = Object.assign(
+        {
+          kitchenType: "",
+          korpuszColor: "",
+          upperFront: "",
+          lowerFront: "",
+          worktopStyle: "",
+          handleStyle: "",
+          store: "vaci"
+        },
+        parts.kitchen || {}
+      );
+      if (quoteNumber.toUpperCase().includes("BUD")) kitchen.store = "budaors";
+
+      const summary = parts.summary || emptyMegrendeloSummary();
+      const worktopState =
+        typeof MegrendeloImport !== "undefined" && MegrendeloImport.extractWorktopStateFromSnapLines
+          ? MegrendeloImport.extractWorktopStateFromSnapLines(snapLines)
+          : { worktopLines: [], worktopTurnerQty: 0, worktopTurnerUnitPrice: 0 };
+      const hardwareLinesImported =
+        typeof MegrendeloImport !== "undefined" && MegrendeloImport.extractHardwareLinesFromSnapLines
+          ? MegrendeloImport.extractHardwareLinesFromSnapLines(snapLines)
+          : typeof PartialInvoiceView !== "undefined" && PartialInvoiceView.hardwareLinesFromSnapshot
+            ? PartialInvoiceView.hardwareLinesFromSnapshot({ lines: snapLines })
+            : [];
+
+      return normalizePayloadForInvoice({
+        quoteNumber,
+        quoteDate: String(parts.quoteDate || "").trim(),
+        customer: parts.customer || {},
+        _importFileName: String(fileName || "").trim(),
+        _importFullText: String(parts.importFullText || "").trim(),
+        kitchen,
+        note: String(parts.note || "").trim(),
+        snapshot: {
+          lines: snapLines,
+          grossTotal: summary.grossTotal || 0,
+          finalTotal: summary.finalTotal || 0,
+          grandTotal: summary.grandTotal || 0,
+          kitchenDiscountedTotal: summary.kitchenTotal || 0,
+          shippingFee: summary.shippingFee || 0,
+          assemblyFee: summary.assemblyFee || 0,
+          discountPct: summary.discountPct || 0,
+          discountHuf: summary.discountHuf || 0
+        },
+        state: {
+          selected,
+          hardwareLines: hardwareLinesImported,
+          kiadvanyExtrasLines,
+          worktopLines: worktopState.worktopLines || [],
+          worktopTurnerQty: worktopState.worktopTurnerQty || 0,
+          worktopTurnerUnitPrice: worktopState.worktopTurnerUnitPrice || 0,
+          shippingFee: summary.shippingFee || 0,
+          assemblyFee: summary.assemblyFee || 0,
+          discount: summary.discountPct || 0
+        },
+        _megrendeloImport: true,
+        _summaryFromFooter: !!summary.fromFooter
+      });
+    }
+
+    function sheetToAoA(wb) {
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      return XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "" });
+    }
+
+    function cell(row, idx) {
+      return String((row && row[idx]) ?? "").trim();
+    }
+
+    function parseDeliveryNoteExcelAoA(aoa) {
+      if (!String(aoa[0]?.[0] || "").includes("Szállítólevél")) return null;
+      const data = {
+        title: "Szállítólevél",
+        customerName: "",
+        customerAddress: "",
+        customerPhone: "",
+        customerEmail: "",
+        quoteNumber: "",
+        quoteDate: "",
+        store: "",
+        kitchenName: "",
+        summaryRows: [],
+        sections: [],
+        deliveryNoteIssueDate: "",
+        deliveryNoteNumber: "",
+        storeAddress: "",
+        storePhone: "",
+        storeEmail: "",
+        hasContent: false
+      };
+      let inTable = false;
+      let currentSection = null;
+      for (const row of aoa) {
+        const a = cell(row, 0);
+        const b = cell(row, 1);
+        if (!inTable) {
+          if (a === "Szállítólevél száma") data.deliveryNoteNumber = b === "—" ? "" : b;
+          else if (a === "Ajánlat #") data.quoteNumber = b;
+          else if (a === "Szállítólevél kelte") data.deliveryNoteIssueDate = b;
+          else if (a === "Dátum") data.deliveryNoteIssueDate = data.deliveryNoteIssueDate || b;
+          else if (a === "Áruház") data.store = b;
+          else if (a === "Áruház címe") data.storeAddress = b;
+          else if (a === "Áruház telefon") data.storePhone = b;
+          else if (a === "Áruház e-mail") data.storeEmail = b;
+          else if (a === "Vevő") data.customerName = b;
+          else if (a === "Szállítási cím") data.customerAddress = b;
+          else if (a === "Telefon" && !data.customerPhone) data.customerPhone = b;
+          else if (a === "E-mail") data.customerEmail = b;
+          else if (a === "Szállítás összesítő" || a === "Nagyker") {
+            inTable = true;
+            currentSection = { title: a, rows: [] };
+            data.sections.push(currentSection);
+          } else if (a === "Megnevezés" && b === "Érték") inTable = true;
+          continue;
+        }
+        if (!a) {
+          if (currentSection) currentSection = null;
+          continue;
+        }
+        if (a === "Átadó (szállító) aláírása") break;
+        if (a === "Szállítás összesítő" || a === "Nagyker") {
+          currentSection = { title: a, rows: [] };
+          data.sections.push(currentSection);
+          continue;
+        }
+        const unitCell = cell(row, 2);
+        let unit = unitCell || "db";
+        let qtyVal = parseQtyCell(b);
+        if (unit === "—" || (!unitCell && b && !/^\d/.test(String(b).replace(/\s/g, "")))) {
+          unit = "—";
+          qtyVal = b;
+        }
+        const entry = {
+          megnevezes: a,
+          qty: qtyVal,
+          unit: unit
+        };
+        if (currentSection) currentSection.rows.push(entry);
+        else data.summaryRows.push(entry);
+        if (a === "Konyha neve") data.kitchenName = String(b || "").trim();
+      }
+      if (!data.sections.length && data.summaryRows.length) {
+        data.sections = [{ title: "Szállítás összesítő", rows: data.summaryRows }];
+      }
+      if (!data.sections.length) {
+        data.sections = [{ title: "Szállítás összesítő", rows: data.summaryRows }];
+      }
+      data.hasContent =
+        data.summaryRows.length > 0 ||
+        !!data.kitchenName ||
+        !!data.customerName ||
+        !!data.customerAddress ||
+        !!data.customerPhone ||
+        !!data.customerEmail;
+      return PartialInvoiceView.ensureDeliveryNoteCustomerFields(data, null);
+    }
+
+    function parseMegrendeloExcelAoA(aoa, fileName) {
+      if (!isMegrendeloExcelAoA(aoa)) return null;
+
+      let quotePrefix = "";
+      let quoteSeq = "";
+      let quoteNumber = "";
+      let quoteDate = "";
+      const customer = { name: "", address: "", phone: "", email: "" };
+      const kitchen = {
+        kitchenType: "",
+        korpuszColor: "",
+        upperFront: "",
+        lowerFront: "",
+        worktopStyle: "",
+        handleStyle: ""
+      };
+      let note = "";
+      const snapLines = [];
+      const itemCols = findMegrendeloItemTableColumns(aoa);
+
+      for (const row of aoa) {
+        const cells = (row || []).map((c) => String(c ?? "").trim());
+        if (cells[0]) {
+          applyMegrendeloCustomerField(customer, cells[0], cells[1]);
+          const inlineHead = String(cells[0] || "").match(
+            /^(Vevő neve|Név|Vevő címe|Cím|Telefon|E-?mail|Email cím)\s*:\s*(.+)$/i
+          );
+          if (inlineHead) applyMegrendeloCustomerField(customer, inlineHead[1], inlineHead[2]);
+        }
+        for (let c = 0; c < cells.length; c++) {
+          const label = normalizeMegrendeloLabel(cells[c]);
+          const value = String(cells[c + 1] ?? "").trim();
+          if (!label) continue;
+
+          if (label === "Megrendelés száma" && value) quotePrefix = value;
+          if (/^MRDH-[A-Z]+-\d{2}$/i.test(label) && /^\d+$/.test(value)) {
+            quotePrefix = label.toUpperCase();
+            quoteSeq = value;
+          }
+          if (label === "Ajánlatadás dátuma" && value) quoteDate = excelSerialOrDotsToIso(value);
+
+          if (label === "Megjegyzés" && value && value !== "-") note = value;
+          if (label.startsWith("Konyha Típus") && value) kitchen.kitchenType = value;
+
+          if (label.includes("Korpusz") && label.includes("bútor") && value) kitchen.korpuszColor = value;
+          if (label === "Felső front" && value) kitchen.upperFront = value;
+          if (label === "Alsó front" && value) kitchen.lowerFront = value;
+          if (label === "Munkalap" && value) kitchen.worktopStyle = value;
+          if (label.includes("Fogantyú") && value) kitchen.handleStyle = value;
+        }
+
+        const full = cells.join(" ");
+        const fullQuote = full.match(/(MRDH-[A-Z]+-\d{2}-\d{3,4})/i);
+        if (fullQuote) quoteNumber = fullQuote[1].toUpperCase();
+
+        if (!quotePrefix && cells.some((x) => /^MRDH-[A-Z]+-\d{2}$/i.test(x))) {
+          const idx = cells.findIndex((x) => /^MRDH-[A-Z]+-\d{2}$/i.test(x));
+          quotePrefix = cells[idx].toUpperCase();
+          if (/^\d+$/.test(cells[idx + 1])) quoteSeq = cells[idx + 1];
+        }
+      }
+
+      if (quotePrefix && !quoteSeq) {
+        for (const row of aoa) {
+          const cells = (row || []).map((c) => String(c ?? "").trim());
+          const idx = cells.findIndex((x) => x === quotePrefix);
+          if (idx >= 0 && /^\d{1,4}$/.test(cells[idx + 1])) {
+            quoteSeq = cells[idx + 1];
+            break;
+          }
+        }
+      }
+
+      if (!quoteNumber) {
+        if (quotePrefix && quoteSeq) {
+          quoteNumber = quotePrefix + "-" + String(Number(quoteSeq)).padStart(4, "0");
+        } else if (quotePrefix) {
+          quoteNumber = quotePrefix;
+        }
+      }
+
+      if (itemCols) {
+        for (let i = itemCols.headerRow + 1; i < aoa.length; i++) {
+          const row = aoa[i] || [];
+          const labels = row.map((c) => String(c ?? "").trim());
+          if (isMegrendeloItemStopRow(labels)) break;
+
+          const qtyRaw = cell(row, itemCols.qtyCol);
+          const name = cell(row, itemCols.descCol);
+          if (!name) continue;
+          if (!qtyRaw && !name) break;
+
+          const qty = parseQtyCell(qtyRaw);
+          const unitGross =
+            itemCols.unitCol >= 0 ? parseHufNumberCell(cell(row, itemCols.unitCol)) : 0;
+          const totalGross =
+            itemCols.totalCol >= 0 ? parseHufNumberCell(cell(row, itemCols.totalCol)) : 0;
+          snapLines.push({
+            code: extractCodeFromMegrendeloLineDescription(name),
+            name,
+            qty,
+            unit: unitGross,
+            total: totalGross > 0 ? totalGross : unitGross * qty
+          });
+        }
+      }
+
+      if (!customer.name && fileName) {
+        customer.name = extractCustomerFromMegrendeloFileName(fileName);
+      }
+      cleanupMegrendeloCustomer(customer);
+
+      const summary = parseMegrendeloSummaryFromAoA(aoa);
+      const payload = buildMegrendeloPayloadFromParts(
+        { quoteNumber, quoteDate, customer, kitchen, note, snapLines, summary },
+        fileName
+      );
+      if (!payload) return null;
+      if (!snapLines.length && !customer.name && !kitchen.kitchenType) return null;
+      return payload;
+    }
+
+    let pdfJsLoadPromise = null;
+
+    function ensurePdfJs() {
+      if (typeof pdfjsLib !== "undefined") {
+        return Promise.resolve(pdfjsLib);
+      }
+      if (!pdfJsLoadPromise) {
+        pdfJsLoadPromise = new Promise((resolve, reject) => {
+          const s = document.createElement("script");
+          s.src = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js";
+          s.onload = () => {
+            try {
+              pdfjsLib.GlobalWorkerOptions.workerSrc =
+                "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+            } catch (_e) {
+              /* ignore */
+            }
+            resolve(pdfjsLib);
+          };
+          s.onerror = () => reject(new Error("PDF.js betöltése sikertelen."));
+          document.head.appendChild(s);
+        });
+      }
+      return pdfJsLoadPromise;
+    }
+
+    async function extractPdfStructuredLines(arrayBuffer) {
+      const pdfjs = await ensurePdfJs();
+      const doc = await pdfjs.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+      const out = [];
+      for (let p = 1; p <= doc.numPages; p++) {
+        const page = await doc.getPage(p);
+        const content = await page.getTextContent();
+        const buckets = new Map();
+        content.items.forEach((it) => {
+          const y = Math.round(it.transform[5]);
+          if (!buckets.has(y)) buckets.set(y, []);
+          buckets.get(y).push({ x: it.transform[4], str: String(it.str || "") });
+        });
+        [...buckets.keys()]
+          .sort((a, b) => b - a)
+          .forEach((y) => {
+            const parts = buckets
+              .get(y)
+              .sort((a, b) => a.x - b.x)
+              .filter((pt) => pt.str.trim());
+            if (!parts.length) return;
+            out.push({ y, parts, text: parts.map((pt) => pt.str).join(" ").replace(/\s+/g, " ").trim() });
+          });
+      }
+      return out;
+    }
+
+    function tryParsePdfItemLine(text) {
+      const t = String(text || "").replace(/\s+/g, " ").trim();
+      if (!t || !/Ft/i.test(t)) return null;
+
+      let m = t.match(/^(\d+)\s*(?:db|szett|fm|m2|m²)?\s+(.+?)\s+([\d\s]+)\s*Ft\s+([\d\s]+)\s*Ft$/i);
+      if (m) {
+        return {
+          qty: parseQtyCell(m[1]),
+          name: m[2].trim(),
+          unit: parseHufNumberCell(m[3]),
+          total: parseHufNumberCell(m[4])
+        };
+      }
+      m = t.match(/^(\d+)\s+(.+?)\s+([\d\s]+)\s*Ft\s+([\d\s]+)\s*Ft$/i);
+      if (m) {
+        return {
+          qty: parseQtyCell(m[1]),
+          name: m[2].trim(),
+          unit: parseHufNumberCell(m[3]),
+          total: parseHufNumberCell(m[4])
+        };
+      }
+      m = t.match(/([\d\s]+)\s*Ft\s+([\d\s]+)\s*Ft\s+(\d+)\s+(.+)$/i);
+      if (m) {
+        return {
+          qty: parseQtyCell(m[3]),
+          name: m[4].trim(),
+          unit: parseHufNumberCell(m[1]),
+          total: parseHufNumberCell(m[2])
+        };
+      }
+      m = t.match(/([\d\s]+)\s*Ft\s+([\d\s]+)\s*Ft\s+(\d+)\s+(.+)/i);
+      if (m) {
+        return {
+          qty: parseQtyCell(m[3]),
+          name: m[4].trim(),
+          unit: parseHufNumberCell(m[1]),
+          total: parseHufNumberCell(m[2])
+        };
+      }
+      return null;
+    }
+
+    function parseMegrendeloPdfFieldBlock(fullText, fileName) {
+      const text = String(fullText || "");
+      const customer = { name: "", address: "", phone: "", email: "" };
+      const kitchen = {
+        kitchenType: "",
+        korpuszColor: "",
+        upperFront: "",
+        lowerFront: "",
+        worktopStyle: "",
+        handleStyle: ""
+      };
+
+      let quoteNumber = extractQuoteNumberFromText(text) || extractQuoteNumberFromText(fileName);
+      const qSplit = text.match(/(MRDH-[A-Z]+-\d{2})[\s-]+(\d{3,4})/i);
+      if (qSplit) quoteNumber = (qSplit[1] + "-" + String(Number(qSplit[2])).padStart(4, "0")).toUpperCase();
+
+      let quoteDate = "";
+      const dateM = text.match(/Ajánlatadás dátuma:\s*(\d{4}\.\d{2}\.\d{2}\.?)/i);
+      if (dateM) quoteDate = parseDotsDateToIso(dateM[1]);
+      if (!quoteDate) {
+        const anyDate = text.match(/\b(\d{4}\.\d{2}\.\d{2})\.?/);
+        if (anyDate) quoteDate = parseDotsDateToIso(anyDate[1]);
+      }
+
+      const emailM = text.match(/[\w.+-]+@[\w.-]+\.\w+/);
+      if (emailM) customer.email = emailM[0];
+
+      const phoneM = text.match(/\b\d{2}\/\d{3}-\d{4}\b/);
+      if (phoneM) customer.phone = phoneM[0];
+
+      const pick = (re) => {
+        const m = text.match(re);
+        return m ? String(m[1]).trim() : "";
+      };
+      customer.name =
+        pick(/Vevő\s+neve\s*:?\s*([^\n|]+?)(?=\s{2,}|Vevő\s+címe|Telefon|E-?mail|Konyha|$)/i) ||
+        pick(/Vevő neve\s+([^\n]+)/i) ||
+        pick(/Név\s*:?\s*([^\n|]+?)(?=\s{2,}|Cím|Telefon|E-?mail|Konyha|$)/i) ||
+        pick(/Vásárló\s+neve\s*:?\s*([^\n|]+)/i) ||
+        customer.name;
+      const labeledAddress =
+        pick(/Vevő\s+címe\s*:?\s*([^\n|]+?)(?=\s{2,}|Telefon|E-?mail|Konyha|$)/i) ||
+        pick(/Vevő címe\s+([^\n]+)/i) ||
+        pick(/Cím\s*:?\s*([^\n|]+?)(?=\s{2,}|Telefon|E-?mail|Konyha|$)/i) ||
+        pick(/Vásárló\s+címe\s*:?\s*([^\n|]+)/i);
+      if (labeledAddress && isPlausibleMegrendeloCustomerAddress(labeledAddress)) {
+        customer.address = labeledAddress;
+      } else if (
+        !customer.address &&
+        typeof PartialInvoiceView !== "undefined" &&
+        PartialInvoiceView.extractAddressFromFreeText
+      ) {
+        customer.address = PartialInvoiceView.extractAddressFromFreeText(text);
+      }
+      kitchen.korpuszColor = pick(/Korpusz\s*\(\s*bútor\s*\):\s*([^|\n]+?)(?=\s{2,}|$)/i);
+      kitchen.upperFront = pick(/Felső front:\s*([^|\n]+)/i);
+      kitchen.lowerFront = pick(/Alsó front:\s*([^|\n]+)/i);
+      kitchen.worktopStyle = pick(/Munkalap:\s*([^|\n]+?)(?=\s+Falipanel:|$)/i);
+      kitchen.handleStyle = pick(/Fogantyú[^:]*:\s*([^|\n]+)/i);
+
+      const ktM = text.match(/Konyha\s*Típus:\s*([^\n]+)/i);
+      if (ktM) {
+        kitchen.kitchenType = ktM[1].replace(/Mennyiség.*/i, "").trim();
+      } else {
+        const selectM = text.match(/(Select\s+[^\n]+?)(?:\s+Konyha\s*Típus:|$)/i);
+        if (selectM) kitchen.kitchenType = selectM[1].trim();
+      }
+
+      if (text.includes("Vevő neve") || text.includes("Név") || text.includes("Vásárló")) {
+        kitchen.kitchenType = pick(/Konyha típus\s+([^\n]+)/i) || kitchen.kitchenType;
+        kitchen.korpuszColor = pick(/Korpusz\s+([^\n]+)/i) || kitchen.korpuszColor;
+        kitchen.lowerFront = pick(/Alsó front\s+([^\n]+)/i) || kitchen.lowerFront;
+        kitchen.upperFront = pick(/Felső front\s+([^\n]+)/i) || kitchen.upperFront;
+        kitchen.worktopStyle = pick(/Munkalap\s+([^\n]+)/i) || kitchen.worktopStyle;
+        kitchen.handleStyle = pick(/Fogantyú\s+([^\n]+)/i) || kitchen.handleStyle;
+        const aruhaz = pick(/Áruház\s+([^\n]+)/i);
+        if (aruhaz.toLowerCase().includes("buda")) kitchen.store = "budaors";
+      }
+
+      if (!customer.name) customer.name = extractCustomerFromMegrendeloFileName(fileName);
+
+      cleanupMegrendeloCustomer(customer);
+
+      return { quoteNumber, quoteDate, customer, kitchen };
+    }
+
+    function parseMegrendeloPdfLines(pdfLines, fileName) {
+      const fullText = pdfLines.map((l) => l.text).join("\n");
+      const meta = parseMegrendeloPdfFieldBlock(fullText, fileName);
+      enrichCustomerFromMegrendeloPdfLines(meta.customer, pdfLines);
+      cleanupMegrendeloCustomer(meta.customer);
+      const snapLines = [];
+      let inItems = false;
+
+      for (const line of pdfLines) {
+        const t = line.text;
+        if (/Mennyiség/i.test(t) && /Leírás/i.test(t)) {
+          inItems = true;
+          continue;
+        }
+        if (!inItems) continue;
+        if (/Az árajánlat/i.test(t) || /Az ajánlat/i.test(t)) break;
+        if (/^Előleg:/i.test(t) || /Végösszeg/i.test(t)) break;
+
+        const item = tryParsePdfItemLine(t);
+        if (!item || !item.name) continue;
+        snapLines.push({
+          code: extractCodeFromMegrendeloLineDescription(item.name),
+          name: item.name,
+          qty: item.qty,
+          unit: item.unit,
+          total: item.total > 0 ? item.total : item.unit * item.qty
+        });
+      }
+
+      const summary = parseMegrendeloSummaryFromText(fullText);
+      const payload = buildMegrendeloPayloadFromParts(
+        Object.assign({}, meta, { snapLines, summary, importFullText: fullText }),
+        fileName
+      );
+      if (!payload) return null;
+      if (!snapLines.length && !meta.customer.name && !meta.kitchen.kitchenType) return null;
+      return payload;
+    }
+
+    async function parseMegrendeloPdfBuffer(arrayBuffer, fileName) {
+      const lines = await extractPdfStructuredLines(arrayBuffer);
+      return parseMegrendeloPdfLines(lines, fileName);
+    }
+
+    async function fetchQuoteJsonForPdfFile(file, quoteHint) {
+      const fromName = extractQuoteNumberFromText(quoteHint || file.name);
+      if (!fromName) {
+        throw new Error(
+          "Nem található MRDH-… ajánlatszám a PDF-ben vagy a fájlnévben. Nevezd át a fájlt (pl. MRDH-BUD-26-0500_megrendelo.pdf), vagy töltsd be a .json párt."
+        );
+      }
+      const base = resolveForwarderBase();
+      const res = await fetch(base + "/saved-orders/resolve?quote=" + encodeURIComponent(fromName));
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok || !data.jsonText) {
+        throw new Error(
+          data.error === "json-not-found"
+            ? "Nincs páros JSON a Mentett megrendelők mappában (" +
+                fromName +
+                ".json). Mentéskor automatikusan készül — vagy töltsd be a .json fájlt közvetlenül."
+            : String(data.error || "forwarder-" + res.status)
+        );
+      }
+      return { quoteNumber: data.quoteNumber || fromName, jsonText: data.jsonText, fileName: data.fileName || "" };
+    }
+
+    function enrichPayloadCustomerFromFileName(payload, fileName) {
+      if (!payload || typeof payload !== "object") return payload;
+      const fn = extractCustomerFromMegrendeloFileName(fileName);
+      if (fileName) payload._importFileName = String(fileName).trim();
+      if (!fn) return payload;
+      payload.customer =
+        payload.customer && typeof payload.customer === "object" ? payload.customer : {};
+      if (!String(payload.customer.name || "").trim()) payload.customer.name = fn;
+      if (!String(payload.customerName || "").trim()) payload.customerName = fn;
+      return payload;
+    }
+
+    async function enrichPayloadCustomerFromQuoteJson(payload, file, quoteHint) {
+      if (!payload || typeof payload !== "object") return payload;
+      const cur =
+        typeof PartialInvoiceView !== "undefined" && PartialInvoiceView.resolveDeliveryCustomerFromPayload
+          ? PartialInvoiceView.resolveDeliveryCustomerFromPayload(payload)
+          : { address: String(payload?.customer?.address || "").trim() };
+      if (String(cur.address || "").trim()) return payload;
+      try {
+        const hit = await fetchQuoteJsonForPdfFile(file, quoteHint || payload.quoteNumber);
+        const quotePayload = normalizePayloadForInvoice(JSON.parse(hit.jsonText));
+        if (
+          quotePayload &&
+          typeof PartialInvoiceView !== "undefined" &&
+          PartialInvoiceView.mergeDeliveryCustomerFields
+        ) {
+          return PartialInvoiceView.mergeDeliveryCustomerFields(payload, quotePayload);
+        }
+      } catch (_e) {
+        /* páros JSON opcionális */
+      }
+      return payload;
+    }
+
+    function applyLoadedPayload(payload, sourceLabel) {
+      loadedPayload = payload;
+      loadedDeliveryNoteData = null;
+      if (loadedPayload?._megrendeloImport) {
+        const ps = document.getElementById("partSelect");
+        if (ps) ps.value = "both";
+      }
+      lastData1 = buildFromPayload(loadedPayload, 1);
+      lastData2 = buildFromPayload(loadedPayload, 2);
+      renderPreview();
+      const fullTotal = round5(lastData1.sumGross + lastData2.sumGross);
+      let status = sourceLabel;
+      if (loadedPayload?._megrendeloImport) {
+        status +=
+          " · Teljes számla (I+II, szerelés nélkül): " +
+          huf(fullTotal) +
+          " · I: " +
+          huf(lastData1.sumGross) +
+          " · II: " +
+          huf(lastData2.sumGross);
+        if (loadedPayload._summaryFromFooter) {
+          status += " · összeg a megrendelőlap láblécből";
+        } else {
+          status += " · FIGYELEM: lábléc nem olvasható — JSON pontosabb";
+        }
+        const grand = Math.max(0, Math.floor(Number(loadedPayload?.snapshot?.grandTotal) || 0));
+        const asm = Math.max(0, Math.floor(Number(loadedPayload?.snapshot?.assemblyFee) || 0));
+        if (grand > fullTotal && asm > 0) {
+          status += " · megrendelőlap végösszeg (szereléssel): " + huf(grand);
+        }
+      } else {
+        status +=
+          " · I: " +
+          huf(lastData1.sumGross) +
+          " · II: " +
+          huf(lastData2.sumGross) +
+          " · I+II: " +
+          huf(fullTotal);
+      }
+      const dn = PartialInvoiceView.buildDeliveryNoteData(loadedPayload);
+      if (dn?.hasContent) {
+        status +=
+          " · Szállítólevél: " +
+          String(dn.cabinetDbTotal || 0) +
+          " bútor db, " +
+          String(dn.worktopPieceCount || 0) +
+          " munkalap";
+      }
+      document.getElementById("status").textContent = status;
+    }
+
+    function applyLoadedDeliveryNoteData(data, sourceLabel) {
+      loadedDeliveryNoteData = PartialInvoiceView.ensureDeliveryNoteCustomerFields(data, null);
+      loadedPayload = null;
+      lastData1 = null;
+      lastData2 = null;
+      document.getElementById("previewPanel").hidden = true;
+      document.getElementById("status").textContent =
+        sourceLabel +
+        " · Szállítólevél kész — nyomd meg a Szállítólevél vagy Szállítólevél Excel gombot.";
+    }
+
+    function huf(n) {
+      return new Intl.NumberFormat("hu-HU", { style: "currency", currency: "HUF", maximumFractionDigits: 0 }).format(
+        Math.round(Number(n) || 0)
+      );
+    }
+
+    function round5(v) {
+      const n = Number(v) || 0;
+      return Math.round(n / 5) * 5;
+    }
+
+    function readFileJson(file) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => {
+          try {
+            resolve(JSON.parse(String(r.result || "{}")));
+          } catch (e) {
+            reject(e);
+          }
+        };
+        r.onerror = () => reject(r.error);
+        r.readAsText(file, "UTF-8");
+      });
+    }
+
+    function readFileArrayBuffer(file) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result);
+        r.onerror = () => reject(r.error);
+        r.readAsArrayBuffer(file);
+      });
+    }
+
+    function fileExt(name) {
+      const m = String(name || "").toLowerCase().match(/\.([a-z0-9]+)$/);
+      return m ? m[1] : "";
+    }
+
+    function uint8ArrayToBase64(buf) {
+      let binary = "";
+      const bytes = new Uint8Array(buf);
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+      return btoa(binary);
+    }
+
+    function buildDeliveryNoteFileStem(data) {
+      const q = String(data?.quoteNumber || "").replace(/[<>:"/\\|?*\x00-\x1F]/g, "_");
+      const n = String(data?.customerName || "")
+        .replace(/[<>:"/\\|?*\x00-\x1F]/g, "_")
+        .slice(0, 40);
+      return (q || n || "szallitolevel") + "_szallitolevel";
+    }
+
+    function resolveDeliveryNoteData() {
+      if (loadedPayload) {
+        return PartialInvoiceView.buildDeliveryNoteData(loadedPayload);
+      }
+      if (loadedDeliveryNoteData?.hasContent) {
+        return PartialInvoiceView.ensureDeliveryNoteCustomerFields(loadedDeliveryNoteData, null);
+      }
+      return null;
+    }
+
+    function mergeVevoIntoInvoiceCustomer(parsed) {
+      if (!parsed || typeof parsed !== "object") return parsed;
+      const v = parsed.vevo && typeof parsed.vevo === "object" ? parsed.vevo : {};
+      const base = parsed.customer && typeof parsed.customer === "object" ? parsed.customer : {};
+      const customer = Object.assign({}, base);
+      if (isPlaceholderCustomerField(customer.name)) {
+        customer.name = String(v.nev || base.nev || "").trim();
+      }
+      const vevoAddress = String(v.cim || base.cim || "").trim();
+      if (
+        isPlaceholderCustomerField(customer.address) ||
+        (!isPlausibleMegrendeloCustomerAddress(customer.address) &&
+          isPlausibleMegrendeloCustomerAddress(vevoAddress))
+      ) {
+        customer.address = vevoAddress;
+      }
+      if (isPlaceholderCustomerField(customer.phone)) {
+        customer.phone = String(v.telefon || base.telefon || "").trim();
+      }
+      if (isPlaceholderCustomerField(customer.email)) {
+        customer.email = String(v.email || base.email || "").trim();
+      }
+      return Object.assign({}, parsed, { customer });
+    }
+
+    /** Árajánlat Mentés / JSON export, vagy régi megrendelő (_megrendelo.json) fájl. */
+    function normalizePayloadForInvoice(parsed) {
+      if (!parsed || typeof parsed !== "object") return null;
+      if (parsed.quoteNumber && parsed.state) return mergeVevoIntoInvoiceCustomer(parsed);
+      const meta = parsed.meta;
+      if (meta && meta.exportType === "divian-order-file-v1" && parsed.megrendeles) {
+        const v = parsed.vevo || {};
+        const bolt = String(parsed.megrendeles.bolt || "");
+        const k = parsed.konyha || {};
+        let store = k.store;
+        if (!store) store = bolt.toLowerCase().includes("buda") ? "budaors" : "vaci";
+        return {
+          quoteNumber: String(parsed.megrendeles.azonosito || "").trim(),
+          quoteDate: String(parsed.megrendeles.datum || ""),
+          customer: {
+            name: String(v.nev || ""),
+            address: String(v.cim || ""),
+            phone: String(v.telefon || ""),
+            email: String(v.email || "")
+          },
+          kitchen: Object.assign({}, k, { store }),
+          snapshot:
+            parsed.osszesites && typeof parsed.osszesites === "object"
+              ? parsed.osszesites
+              : { lines: [], grossTotal: 0, finalTotal: 0, discountPct: 0 },
+          state:
+            parsed.allapot && typeof parsed.allapot === "object"
+              ? parsed.allapot
+              : { hardwareLines: [], kiadvanyExtrasLines: [] },
+          note: String(parsed.megjegyzes || "")
+        };
+      }
+      return parsed;
+    }
+
+    function splitHalf(full) {
+      const f = Math.max(0, Math.floor(Number(full) || 0));
+      const first = round5(Math.round(f * PARTIAL_RATE));
+      const second = round5(f - first);
+      return { full: f, first, second };
+    }
+
+    function halfForPart(full, part) {
+      const s = splitHalf(full);
+      return part === 2 ? s.second : s.first;
+    }
+
+    function isAssemblyLine(name, code, lineTotal, assemblyFeeRef) {
+      if (typeof PartialInvoiceView !== "undefined" && PartialInvoiceView.isAssemblyInstallFeeLine) {
+        return PartialInvoiceView.isAssemblyInstallFeeLine(name, code, lineTotal, assemblyFeeRef);
+      }
+      const n = String(name || "").toLowerCase();
+      return n.includes("összeszerel") || n.includes("osszeszere") || n.includes("szerelés");
+    }
+
+    function isAssemblySnapshotLine(line, assemblyFeeRef) {
+      if (typeof PartialInvoiceView !== "undefined" && PartialInvoiceView.isAssemblySnapshotLine) {
+        return PartialInvoiceView.isAssemblySnapshotLine(line, assemblyFeeRef);
+      }
+      return isAssemblyLine(line?.name, line?.code, line?.total, assemblyFeeRef);
+    }
+
+    function grossToNetAndVat(grossAmount) {
+      const gross = Math.max(0, Math.round(Number(grossAmount) || 0));
+      if (gross <= 0) return { net: 0, vat: 0, gross: 0 };
+      const net = round5(Math.round(gross / (1 + VAT_RATE)));
+      const vat = gross - net;
+      return { net, vat, gross };
+    }
+
+    function ensurePartialMegnevezes(name, part) {
+      const n = String(name || "").trim();
+      if (!n) return part === 2 ? "II. részlet" : "I. részlet";
+      const lower = n.toLowerCase();
+      if (lower.includes("i. részlet") || lower.includes("ii. részlet") || lower.includes("i. reszlet")) {
+        return n;
+      }
+      return n + " " + (part === 2 ? "II. részlet" : "I. részlet");
+    }
+
+    function finalizeRow(row) {
+      const qty = Math.max(1, Math.floor(Number(row.qty) || 0));
+      const g = grossToNetAndVat(row.gross);
+      return Object.assign({}, row, {
+        qty,
+        unitNet: round5(Math.round(g.net / qty)),
+        net: g.net,
+        vatPct: VAT_PCT,
+        vat: g.vat,
+        gross: g.gross
+      });
+    }
+
+    function pushRow(rows, part, megnevezes, qty, fullGross) {
+      const q = Math.max(0, Math.floor(Number(qty) || 0));
+      const full = Math.max(0, Math.floor(Number(fullGross) || 0));
+      if (full <= 0) return;
+      const grossHalf = halfForPart(full, part);
+      if (grossHalf <= 0) return;
+      rows.push(
+        finalizeRow({
+          megnevezes: ensurePartialMegnevezes(megnevezes, part),
+          qty: q > 0 ? q : 1,
+          gross: grossHalf
+        })
+      );
+    }
+
+    function isKiadvanyTapLine(line) {
+      if (
+        typeof PartialInvoiceView !== "undefined" &&
+        PartialInvoiceView.isKiadvanyTapLine
+      ) {
+        return PartialInvoiceView.isKiadvanyTapLine(line);
+      }
+      return !!line && line.kind === "tap";
+    }
+
+    function kiadvanyLineTitle(line) {
+      if (
+        typeof PartialInvoiceView !== "undefined" &&
+        PartialInvoiceView.formatKiadvanyInvoiceTitle
+      ) {
+        return PartialInvoiceView.formatKiadvanyInvoiceTitle(line);
+      }
+      if (isKiadvanyTapLine(line)) {
+        return "Csaptelep · " + (line.brand ? line.brand + " · " : "") + (line.name || line.code || "");
+      }
+      const name = String(line.name || line.code || "");
+      const code = String(line.code || "").trim();
+      return code && !name.toUpperCase().startsWith(code.toUpperCase()) ? code + " " + name : name || code;
+    }
+
+    function buildFromPayload(payload, part) {
+      const snap = payload?.snapshot || {};
+      const st = payload?.state || {};
+      const assemblyFeeRef =
+        typeof PartialInvoiceView !== "undefined" && PartialInvoiceView.resolveAssemblyFeeFromPayload
+          ? PartialInvoiceView.resolveAssemblyFeeFromPayload(payload)
+          : Math.max(0, Math.floor(Number(snap.assemblyFee) || 0) || Math.floor(Number(st.assemblyFee) || 0));
+      const kitchenBase =
+        typeof PartialInvoiceView !== "undefined" && PartialInvoiceView.resolvePartialInvoiceKitchenBase
+          ? round5(PartialInvoiceView.resolvePartialInvoiceKitchenBase(snap, st, assemblyFeeRef))
+          : round5(Math.max(0, Math.floor(Number(snap.finalTotal) || 0) - Math.floor(Number(st.shippingFee || snap.shippingFee) || 0)));
+      const kitchenPart = halfForPart(kitchenBase, part);
+      const shipping = Math.max(0, Math.floor(Number(st.shippingFee || snap.shippingFee) || 0));
+      const splittable =
+        typeof PartialInvoiceView !== "undefined" && PartialInvoiceView.resolvePartialInvoiceSplittableTotal
+          ? round5(PartialInvoiceView.resolvePartialInvoiceSplittableTotal(snap, st, assemblyFeeRef))
+          : kitchenBase + shipping;
+      const rows = [];
+      if (kitchenPart > 0) {
+        rows.push(
+          finalizeRow({
+            megnevezes:
+              typeof PartialInvoiceView !== "undefined" && PartialInvoiceView.resolvePartialInvoiceKitchenTitle
+                ? PartialInvoiceView.resolvePartialInvoiceKitchenTitle(payload, part)
+                : ensurePartialMegnevezes(
+                    String(payload?.kitchen?.kitchenType || payload?.kitchen?.family || "Konyha").trim() +
+                      " konyha",
+                    part
+                  ),
+            qty: 1,
+            gross: kitchenPart
+          })
+        );
+      }
+      const hardwareSource =
+        Array.isArray(st.hardwareLines) && st.hardwareLines.length
+          ? st.hardwareLines
+          : typeof PartialInvoiceView !== "undefined" && PartialInvoiceView.hardwareLinesFromSnapshot
+            ? PartialInvoiceView.hardwareLinesFromSnapshot(snap)
+            : [];
+      const kiadvanySource =
+        Array.isArray(st.kiadvanyExtrasLines) && st.kiadvanyExtrasLines.length
+          ? st.kiadvanyExtrasLines
+          : typeof PartialInvoiceView !== "undefined" && PartialInvoiceView.kiadvanyLinesFromSnapshot
+            ? PartialInvoiceView.kiadvanyLinesFromSnapshot(snap)
+            : [];
+      hardwareSource.forEach((line) => {
+        const qty = Number(line.qty) || 0;
+        const unit = Number(line.unit) || 0;
+        if (qty <= 0 || unit <= 0) return;
+        const label = String(line.name || line.code || "").trim();
+        const lineGross = qty * unit;
+        if (isAssemblyLine(label, line.code, lineGross, assemblyFeeRef)) return;
+        pushRow(rows, part, label, qty, lineGross);
+      });
+      let tapInvoiceQty = 0;
+      let tapInvoiceGross = 0;
+      kiadvanySource.forEach((line) => {
+        if (
+          typeof PartialInvoiceView !== "undefined" &&
+          PartialInvoiceView.isInvoiceKiadvanyLine &&
+          !PartialInvoiceView.isInvoiceKiadvanyLine(line)
+        ) {
+          return;
+        }
+        const qty = Number(line.qty) || 0;
+        const unit = Number(line.unit) || 0;
+        if (qty <= 0 || unit <= 0) return;
+        const lineGross = qty * unit;
+        if (isAssemblyLine(line.name, line.code, lineGross, assemblyFeeRef)) return;
+        if (isKiadvanyTapLine(line)) {
+          tapInvoiceQty += qty;
+          tapInvoiceGross += lineGross;
+          return;
+        }
+        const label = kiadvanyLineTitle(line);
+        pushRow(rows, part, label, qty, lineGross);
+      });
+      if (tapInvoiceGross > 0) {
+        pushRow(rows, part, "Csaptelep", tapInvoiceQty, tapInvoiceGross);
+      }
+      if (shipping > 0) pushRow(rows, part, "Szállítás", 1, shipping);
+      const sumNet = rows.reduce((s, r) => s + r.net, 0);
+      const sumVat = rows.reduce((s, r) => s + r.vat, 0);
+      const sumGross = rows.reduce((s, r) => s + r.gross, 0);
+      return {
+        part,
+        partLabel: part === 2 ? "II. részlet" : "I. részlet",
+        rows,
+        sumNet,
+        sumVat,
+        sumGross,
+        kitchenBase,
+        kitchenPart,
+        splittableFullTotal: splittable,
+        customerName: String(payload?.customer?.name || ""),
+        quoteNumber: String(payload?.quoteNumber || ""),
+        quoteDate: String(payload?.quoteDate || "")
+      };
+    }
+
+    function renderPreview() {
+      const mode = document.getElementById("partSelect").value;
+      const host = document.getElementById("previewHost");
+      if (!lastData1 && !lastData2) {
+        document.getElementById("previewPanel").hidden = true;
+        return;
+      }
+      document.getElementById("previewPanel").hidden = false;
+      let html = "";
+      if (mode === "2" && lastData2) {
+        html = PartialInvoiceView.buildPartialInvoiceTableHtml(lastData2);
+      } else if (mode === "both") {
+        if (lastData1) html += PartialInvoiceView.buildPartialInvoiceTableHtml(lastData1);
+        if (lastData2) {
+          html += '<div style="height:1.5rem"></div>';
+          html += PartialInvoiceView.buildPartialInvoiceTableHtml(lastData2);
+        }
+        if (lastData1 && lastData2) {
+          const i2 = round5(lastData1.sumGross + lastData2.sumGross);
+          html +=
+            '<div class="pi-check" style="margin-top:1rem;font-size:9pt;color:#666">Ellenőrzés (I.+II. bruttó): <strong>' +
+            PartialInvoiceView.formatPiGrandTotal(i2) +
+            "</strong></div>";
+        }
+      } else if (lastData1) {
+        html = PartialInvoiceView.buildPartialInvoiceTableHtml(lastData1);
+      }
+      host.innerHTML = html;
+    }
+
+    function buildSheetAoA(data, otherPart) {
+      const aoa = [
+        ["Számla előkészítő — " + data.partLabel],
+        ["Vevő", data.customerName],
+        ["Ajánlat #", data.quoteNumber],
+        ["Dátum", data.quoteDate],
+        [],
+        ["Megnevezés", "Menny.", "Egységár", "Nettó ár", "Áfa", "Áfaérték", "Bruttó ár"]
+      ];
+      data.rows.forEach((r) =>
+        aoa.push([r.megnevezes, r.qty, r.unitNet, r.net, r.vatPct + " %", r.vat, r.gross])
+      );
+      aoa.push([]);
+      aoa.push(["Összesen:", "", "", data.sumNet, "", data.sumVat, data.sumGross]);
+      aoa.push(["", "", "", "", "áfa " + VAT_PCT + " %:", data.sumVat, ""]);
+      aoa.push([]);
+      aoa.push(["", "", "", "", "", "Összesen:", data.sumGross + " Ft"]);
+      if (otherPart && otherPart.sumGross != null) {
+        aoa.push([]);
+        aoa.push([
+          "Ellenőrzés (I. + II. bruttó)",
+          round5(data.sumGross + otherPart.sumGross),
+          "Teljes felszámítható (bruttó)",
+          data.splittableFullTotal
+        ]);
+      }
+      return aoa;
+    }
+
+    function exportExcel() {
+      if (!lastData1 && !lastData2) {
+        document.getElementById("status").textContent = "Nincs exportálható sor.";
+        return;
+      }
+      const wb = XLSX.utils.book_new();
+      if (lastData1) {
+        XLSX.utils.book_append_sheet(
+          wb,
+          XLSX.utils.aoa_to_sheet(buildSheetAoA(lastData1, lastData2)),
+          "I_reszlet"
+        );
+      }
+      if (lastData2) {
+        XLSX.utils.book_append_sheet(
+          wb,
+          XLSX.utils.aoa_to_sheet(buildSheetAoA(lastData2, lastData1)),
+          "II_reszlet"
+        );
+      }
+      const fn =
+        (lastData1?.customerName || lastData2?.customerName || "Vevo").replace(/[<>:"/\\|?*]/g, "_").slice(0, 40) +
+        "_" +
+        (lastData1?.quoteNumber || lastData2?.quoteNumber || "reszlet").replace(/[<>:"/\\|?*]/g, "_") +
+        "_I-II-reszlet.xlsx";
+      XLSX.writeFile(wb, fn);
+      document.getElementById("status").textContent = "Excel letöltve: " + fn;
+    }
+
+    function openPrintWindow() {
+      if (!lastData1 && !lastData2) {
+        document.getElementById("status").textContent =
+          "Számla előnézet: tölts be JSON-t (vagy PDF-et páros JSON-nel).";
+        return;
+      }
+      PartialInvoiceView.openPartialInvoicePreview(lastData1, lastData2);
+    }
+
+    function openDeliveryNote() {
+      const data = resolveDeliveryNoteData();
+      if (!data) {
+        document.getElementById("status").textContent =
+          "Előbb tölts be fájlt (JSON, PDF vagy Excel).";
+        return;
+      }
+      if (!data.hasContent) {
+        document.getElementById("status").textContent =
+          "Szállítólevél: nincs konyha típus / bútor / munkalap az exportban.";
+        return;
+      }
+      let res;
+      if (loadedDeliveryNoteData) {
+        const html = PartialInvoiceView.buildDeliveryNoteDocumentHtml(data, {
+          forwarderBase: resolveForwarderBase()
+        });
+        res = PartialInvoiceView.openHtmlInPrintWindow(html);
+        if (!res.ok) res = { ok: false, blocked: true };
+        else res = { ok: true };
+      } else {
+        res = PartialInvoiceView.openDeliveryNotePreview(loadedPayload);
+      }
+      if (res && res.ok) {
+        document.getElementById("status").textContent =
+          "Szállítólevél megnyitva · " +
+          String(data.cabinetDbTotal || 0) +
+          " bútor db, " +
+          String(data.worktopPieceCount || 0) +
+          " munkalap · Nyomtatás / PDF az új ablakban.";
+      } else if (res && res.blocked) {
+        document.getElementById("status").textContent =
+          "Szállítólevél: engedélyezd a felugró ablakokat, majd próbáld újra.";
+      }
+    }
+
+    async function exportDeliveryNotePdf() {
+      const data = resolveDeliveryNoteData();
+      if (!data?.hasContent) {
+        document.getElementById("status").textContent =
+          "Szállítólevél PDF: előbb tölts be fájlt, vagy nincs exportálható adat.";
+        return;
+      }
+      if (!PartialInvoiceView.saveDeliveryNotePdfToFolder) {
+        document.getElementById("status").textContent = "PDF mentés modul nem elérhető.";
+        return;
+      }
+      document.getElementById("status").textContent = "Szállítólevél PDF készítése…";
+      try {
+        const res = await PartialInvoiceView.saveDeliveryNotePdfToFolder(data, {
+          forwarderBase: resolveForwarderBase()
+        });
+        if (res?.ok) {
+          document.getElementById("status").textContent =
+            "Szállítólevél PDF mentve (vevő mappa): " +
+            (res.savedPath || res.fileName) +
+            " · innen csatolhatod a levélhez.";
+          return;
+        }
+        document.getElementById("status").textContent =
+          "Szállítólevél PDF mentés sikertelen: " + String(res?.error || "ismeretlen hiba");
+      } catch (e) {
+        document.getElementById("status").textContent = "Szállítólevél PDF hiba: " + String(e.message || e);
+      }
+    }
+
+    async function exportDeliveryNoteExcel() {
+      const data = resolveDeliveryNoteData();
+      if (!data?.hasContent) {
+        document.getElementById("status").textContent =
+          "Szállítólevél Excel: előbb tölts be fájlt, vagy nincs exportálható adat.";
+        return;
+      }
+      if (typeof XLSX === "undefined" || !PartialInvoiceView.buildDeliveryNoteExcelAoA) {
+        document.getElementById("status").textContent = "Excel modul nem elérhető.";
+        return;
+      }
+      const aoa = PartialInvoiceView.buildDeliveryNoteExcelAoA(data);
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      ws["!cols"] = [{ wch: 28 }, { wch: 36 }, { wch: 10 }];
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Szállítólevél");
+      const fileName = buildDeliveryNoteFileStem(data) + ".xlsx";
+      try {
+        if (typeof window.divianSaveDeliveryNoteExcel === "function") {
+          const buf = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+          const res = await window.divianSaveDeliveryNoteExcel({
+            fileName,
+            base64: uint8ArrayToBase64(buf)
+          });
+          if (res?.ok) {
+            document.getElementById("status").textContent =
+              "Szállítólevél Excel mentve (Szállítólevelek Excel mappa): " + (res.savedPath || fileName);
+            return;
+          }
+          document.getElementById("status").textContent =
+            "Szállítólevél Excel mentés sikertelen: " + String(res?.error || "ismeretlen hiba");
+          return;
+        }
+        XLSX.writeFile(wb, fileName);
+        document.getElementById("status").textContent = "Szállítólevél Excel letöltve: " + fileName;
+      } catch (e) {
+        document.getElementById("status").textContent = "Szállítólevél Excel hiba: " + String(e.message || e);
+      }
+    }
+
+    async function loadImportFile(file) {
+      const ext = fileExt(file.name);
+      if (ext === "json") {
+        const payload = enrichPayloadCustomerFromFileName(
+          normalizePayloadForInvoice(await readFileJson(file)),
+          file.name
+        );
+        if (!payload || !payload.state) {
+          throw new Error("Érvénytelen JSON — használd a Mentés (JSON) vagy Export → JSON export fájlt.");
+        }
+        applyLoadedPayload(payload, "JSON betöltve");
+        return;
+      }
+      if (ext === "pdf") {
+        const buf = await readFileArrayBuffer(file);
+        let payload = null;
+        let pdfErr = "";
+        let quoteFromPdf = "";
+        try {
+          payload = await parseMegrendeloPdfBuffer(buf, file.name);
+          quoteFromPdf = String(payload?.quoteNumber || "").trim();
+        } catch (e) {
+          pdfErr = String(e.message || e);
+        }
+        if (payload?.state) {
+          payload = await enrichPayloadCustomerFromQuoteJson(payload, file, quoteFromPdf);
+          applyLoadedPayload(
+            enrichPayloadCustomerFromFileName(payload, file.name),
+            "Megrendelőlap PDF betöltve (tartalom alapján)"
+          );
+          return;
+        }
+        try {
+          const hit = await fetchQuoteJsonForPdfFile(file, quoteFromPdf);
+          payload = enrichPayloadCustomerFromFileName(
+            normalizePayloadForInvoice(JSON.parse(hit.jsonText)),
+            hit.fileName || file.name
+          );
+          if (!payload || !payload.state) {
+            throw new Error("A páros JSON érvénytelen vagy hiányos.");
+          }
+          applyLoadedPayload(
+            payload,
+            "PDF → páros JSON (" + (hit.fileName || hit.quoteNumber) + ")"
+          );
+          return;
+        } catch (jsonErr) {
+          const msg = String(jsonErr.message || jsonErr);
+          if (pdfErr) {
+            throw new Error(
+              "PDF tartalom feldolgozása sikertelen (" +
+                pdfErr +
+                "). Mentett JSON sem elérhető: " +
+                msg
+            );
+          }
+          throw jsonErr;
+        }
+      }
+      if (ext === "xlsx" || ext === "xls") {
+        const buf = await readFileArrayBuffer(file);
+        const wb = XLSX.read(buf, { type: "array" });
+        const aoa = sheetToAoA(wb);
+        const dn = parseDeliveryNoteExcelAoA(aoa);
+        if (dn) {
+          applyLoadedDeliveryNoteData(dn, "Szállítólevél Excel betöltve");
+          return;
+        }
+        const payload = parseMegrendeloExcelAoA(aoa, file.name);
+        if (payload) {
+          const enriched = await enrichPayloadCustomerFromQuoteJson(payload, file, payload.quoteNumber);
+          applyLoadedPayload(enriched, "Megrendelőlap Excel betöltve");
+          return;
+        }
+        throw new Error("Ismeretlen Excel — megrendelőlap vagy szállítólevél .xlsx kell.");
+      }
+      throw new Error("Nem támogatott fájltípus: ." + (ext || "?"));
+    }
+
+    async function reload() {
+      const f = document.getElementById("jsonFile").files[0];
+      if (!f) {
+        document.getElementById("status").textContent = "Válassz JSON, PDF vagy Excel fájlt.";
+        return;
+      }
+      try {
+        await loadImportFile(f);
+      } catch (e) {
+        document.getElementById("status").textContent = String(e.message || e);
+      }
+    }
+
+    PartialInvoiceView.injectPartialInvoiceStyles();
+
+    document.getElementById("reloadBtn").addEventListener("click", () => void reload());
+    document.getElementById("printBtn").addEventListener("click", openPrintWindow);
+    document.getElementById("deliveryNoteBtn").addEventListener("click", openDeliveryNote);
+    document.getElementById("deliveryNotePdfBtn").addEventListener("click", () => void exportDeliveryNotePdf());
+    document.getElementById("deliveryNoteExcelBtn").addEventListener("click", () => void exportDeliveryNoteExcel());
+    document.getElementById("excelBtn").addEventListener("click", exportExcel);
+    document.getElementById("partSelect").addEventListener("change", renderPreview);
+    document.getElementById("jsonFile").addEventListener("change", () => void reload());
+  </script>
+</body>
+</html>

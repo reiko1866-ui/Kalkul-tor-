@@ -1,0 +1,36 @@
+# nginx példa — HTTPS elött a Divian szerver (127.0.0.1:17321)
+
+upstream divian_backend {
+    server 127.0.0.1:17321;
+    keepalive 16;
+}
+
+server {
+    listen 80;
+    server_name megrendelo.divian.hu;
+    return 301 https://$host$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name megrendelo.divian.hu;
+
+    # ssl_certificate     /etc/letsencrypt/live/megrendelo.divian.hu/fullchain.pem;
+    # ssl_certificate_key /etc/letsencrypt/live/megrendelo.divian.hu/privkey.pem;
+
+    client_max_body_size 32m;
+
+    location / {
+        proxy_pass http://divian_backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+    }
+}
+
+# config/szerver.env:
+#   DIVIAN_PUBLIC_URL=https://megrendelo.divian.hu
+#   DIVIAN_BIND_HOST=127.0.0.1

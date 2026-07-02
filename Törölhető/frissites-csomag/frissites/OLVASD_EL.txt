@@ -1,0 +1,45 @@
+Divian Kalkulator — Budaors frissites (2026-06-09)
+==================================================
+
+MIT TARTALMAZ EZ A CSOMAG?
+--------------------------
+  • Vevo mappa mentes: Mentett megrendelok / {Vevo nev} — {sorszam} /
+    (JSON, megrendelo PDF, szallitolevel PDF egy helyen)
+  • Helyi bizonylat (dijbekero, szallitolevel) — Szamlazz elofizetes nelkul
+  • Dijbekero I.+II. reszlet sema, fizetesi mod (bankkartya / keszpenz / atutalas)
+  • about:blank felesleges lap javitasa (elonezet / PDF)
+  • Cyncly: inditas-teszt-tervezo.bat + install-playwright-browsers.bat
+
+BUDAORS GEPEN — TELEPITES
+------------------------
+  1. Zarj be minden futo Divian / Chrome ablakot (Ctrl+C a fekete ablakban).
+  2. Masold felul a teljes DivianKalkulátor mappat, VAGY:
+     - csak a frissites/ mappa fajlait a Budaors masolat gyokerbe
+       (Desktop\Budaors\DivianKalkulátor\)
+  3. Dupla katt: install-fuggosegek.bat
+     (npm install + frissites fajlok masolasa a gyokerbe)
+  4. Egyszer, ha meg nem futott: install-playwright-browsers.bat
+  5. Inditas:
+     - Napi munka (tervezo + ajanlat): INDITAS-TERVEZOVEL.bat
+       vagy inditas-teszt-tervezo.bat
+     - Csak ajanlat (helyi bizonylat): inditas-teszt.bat
+  6. Böngeszoben: Ctrl+F5 az arajanlat.html oldalon
+
+FONTOS — SZAMLAZZ
+-----------------
+  • Budaorsnal maradunk a HELYI modban (nincs #start Szamlazz csomag).
+  • inditas-teszt.bat alap — nem kell szamlazz-agent-key.
+  • Dijbekero / Szallitolevel: helyi PDF (nyomtatas → PDF).
+
+ELLENORZES MENTES UTAN
+----------------------
+  Asztalon: Mentett megrendelok / Nagy Janos — MRDH-BUD-26-XXXX /
+    - MRDH-BUD-26-XXXX.json
+    - MRDH-BUD-26-XXXX_megrendelo.pdf
+    - (kesobb) MRDH-BUD-26-XXXX_szallitolevel.pdf
+
+FRISSITES ELKESZITESE (fejlesztoi gep)
+--------------------------------------
+  node tools/prepare-frissites.js
+
+RÉgi másolatok: _archiv\2026-05-16-regi-masolatok\

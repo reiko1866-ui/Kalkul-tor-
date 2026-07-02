@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="hu">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Divian – Otthoni konyhatervező (2D / 3D)</title>
+    <meta
+      name="description"
+      content="Homelux-szerű konyhatervező folyamat: Divian elemjegyzék, front színek és fogantyúk, 2D és 3D nézet – ár nélkül."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="divian-brand.css?v=20260530e" />
+    <link rel="stylesheet" href="styles.css?v=20260530e" />
+    <link rel="stylesheet" href="konyhatervezo.css?v=20260530e" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container nav-wrap">
+        <a href="index.html" class="logo">DIVIAN</a>
+        <nav class="main-nav">
+          <a href="index.html#elonyok">Előnyök</a>
+          <a href="index.html#kapcsolat">Kapcsolat</a>
+        </nav>
+        <div style="display: flex; gap: 0.5rem; align-items: center">
+          <a href="konyhatervezo.html" class="btn btn-small btn-primary">Otthoni tervező</a>
+          <a href="arajanlat.html" class="btn btn-small">Árajánlat</a>
+        </div>
+      </div>
+    </header>
+
+    <main class="planner-page">
+      <section class="planner-bar">
+        <div class="container">
+          <p class="eyebrow" style="color: rgba(255, 255, 255, 0.85)">
+            Divian · otthoni konyhatervező
+          </p>
+          <h1>Tervezd meg a konyhád elrendezését – Divian elemekkel és színekkel</h1>
+          <p class="lead">
+            A folyamat hasonlít egy online konyhatervezőhöz (pl. Homelux): <strong>2D alaprajz</strong> és
+            <strong>3D nézet</strong>, frontszín- és fogantyúválaszték a Divian kínálatából. Az elemek cikkszámai a
+            <a
+              href="https://divian.hu/data/konyhaarlista.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              style="color: #c8e6ff"
+              >hivatalos elemjegyzék PDF</a
+            >
+            logikájából – <strong>ár és kedvezmény nem szerepel</strong> itt.
+          </p>
+          <div class="planner-disclaimer">
+            Tájékoztató vizualizáció: nem minősül szerződéses ajánlatnak. A pontos műszaki megvalósítást Divian
+            tervezőnk véglegesíti.
+          </div>
+        </div>
+      </section>
+
+      <div class="container planner-shell">
+        <aside class="planner-panel planner-panel--scroll">
+          <h2>Helyiség</h2>
+          <div class="field-grid">
+            <label>
+              Elrendezés
+              <select id="layoutSelect">
+                <option value="straight">Egyenes fal</option>
+                <option value="l">L alakú sarok</option>
+              </select>
+            </label>
+            <label>
+              Fő fal hossza (cm)
+              <input id="mainWallCm" type="number" min="180" max="600" step="10" value="360" />
+            </label>
+            <label id="returnWallWrap" style="display: none">
+              Merőleges fal hossza (cm)
+              <input id="returnWallCm" type="number" min="120" max="500" step="10" value="240" />
+            </label>
+            <label>
+              Mélység / fal mögötti tér (cm)
+              <input id="roomDepthCm" type="number" min="200" max="400" step="10" value="280" />
+            </label>
+          </div>
+
+          <h3>Divian front szín</h3>
+          <p class="planner-note">Kattints egy színre – a 2D és 3D előnézet frissül.</p>
+          <div id="frontSwatches" class="swatch-row"></div>
+          <p class="swatch-legend" id="frontLegend"></p>
+
+          <h3>Fogantyú</h3>
+          <label class="select-inline">
+            <span>Típus</span>
+            <select id="handleSelect"></select>
+          </label>
+
+          <h3>Teljes elemjegyzék (PDF-ből generálva, ár nélkül)</h3>
+          <label class="module-search-label">
+            Szűrés cikkszám / név
+            <input
+              id="moduleSearch"
+              type="search"
+              placeholder="pl. AML60, fiók, FMF…"
+              autocomplete="off"
+            />
+          </label>
+          <p id="paletteCountHint" class="palette-hint"></p>
+          <p class="planner-note">Válassz modult – a rajzra kerül, majd húzd a fal mentén.</p>
+          <div id="paletteRoot" class="palette"></div>
+
+          <div class="tool-row">
+            <button id="btnDelete" type="button">Kijelölt törlése</button>
+            <button id="btnClear" type="button">Összes törlése</button>
+          </div>
+        </aside>
+
+        <section class="canvas-wrap canvas-wrap--main">
+          <div class="view-tabs" role="tablist">
+            <button type="button" class="view-tab is-active" data-view="2d" role="tab">2D alaprajz</button>
+            <button type="button" class="view-tab" data-view="3d" role="tab">3D nézet</button>
+          </div>
+
+          <div id="view2dWrap" class="view-panel">
+            <canvas id="planCanvas" width="900" height="520" aria-label="2D konyha alaprajz"></canvas>
+            <p class="canvas-hint">
+              <strong>2D:</strong> fentről nézve, műszaki alaprajz-stílus (fal, méretvonalak, szekrény szimbólumok). Kattintás
+              kijelöl, húzás a fal mentén.
+            </p>
+          </div>
+
+          <div id="view3dWrap" class="view-panel is-hidden">
+            <div id="view3dHost" class="view3d-host"></div>
+            <p class="canvas-hint">
+              <strong>3D:</strong> forgatás az egérrel. Fa textúra, munkalap, világítás – illusztráció a Divian front
+              színhez igazítva (nem fotoreal gyártmány-másolat).
+            </p>
+          </div>
+        </section>
+
+        <aside class="planner-panel planner-panel--scroll">
+          <h2>Összegzés</h2>
+          <ul id="summaryUl" class="summary-list"></ul>
+
+          <h3>Kérjek ajánlatot</h3>
+          <p class="planner-note">
+            A letöltött JSON tartalmazza a cikkszámokat, frontot és fogantyút – küldd el üzletünknek.
+          </p>
+          <form class="lead-form" id="leadForm" onsubmit="return false;">
+            <label>
+              Dátum
+              <input id="leadDate" type="date" readonly />
+            </label>
+            <label>
+              Név
+              <input id="leadName" type="text" autocomplete="name" />
+            </label>
+            <label>
+              Telefon
+              <input id="leadPhone" type="tel" autocomplete="tel" />
+            </label>
+            <label>
+              E-mail
+              <input id="leadEmail" type="email" autocomplete="email" />
+            </label>
+            <label>
+              Megjegyzés
+              <textarea id="leadNote"></textarea>
+            </label>
+          </form>
+          <div class="planner-actions">
+            <button id="btnDownload" type="button" class="btn btn-primary">Terv letöltése (JSON)</button>
+          </div>
+        </aside>
+      </div>
+    </main>
+
+    <footer class="site-footer" style="margin-top: 2rem">
+      <div class="container">
+        <p class="empty-text" style="text-align: center; margin: 0; padding: 1rem 0">
+          © Divian · Elemjegyzék: divian.hu/data/konyhaarlista.pdf (árak nélkül) · Front és fogantyú: kollekció szerint.
+        </p>
+      </div>
+    </footer>
+
+    <script src="divian-planner-data.js"></script>
+    <script src="divian-planner-modules.generated.js"></script>
+    <script src="konyhatervezo.js"></script>
+    <script type="module">
+      import { initKitchen3D } from "./konyhatervezo-3d.mjs";
+      const host = document.getElementById("view3dHost");
+      let kitchen3dStarted = false;
+      function startKitchen3DWhenReady() {
+        if (kitchen3dStarted || !host || !window.DivianPlanner) return;
+        kitchen3dStarted = true;
+        initKitchen3D(host);
+      }
+      const tab3d = document.querySelector('.view-tab[data-view="3d"]');
+      if (tab3d) {
+        tab3d.addEventListener(
+          "click",
+          () => {
+            requestAnimationFrame(() => startKitchen3DWhenReady());
+          },
+          { passive: true }
+        );
+      }
+      const legend = document.getElementById("frontLegend");
+      const data = window.DIVIAN_PLANNER_DATA;
+      function syncLegend() {
+        if (!legend || !data || !window.DivianPlanner) return;
+        const st = window.DivianPlanner.getState();
+        const f = data.fronts.find((x) => x.id === st.frontId);
+        legend.textContent = f ? f.name : "";
+      }
+      window.DivianPlanner.subscribe(syncLegend);
+      syncLegend();
+    </script>
+  </body>
+</html>

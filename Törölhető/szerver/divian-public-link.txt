@@ -1,0 +1,19 @@
+Divian TÁVOLI SZERVER — fő gép
+================================
+
+Parancspult (100 km-ről is):
+https://clothing-admit-caribbean-organize.trycloudflare.com/dashboard.html
+
+Árajánlat:
+https://clothing-admit-caribbean-organize.trycloudflare.com/arajanlat.html
+
+Admin:
+https://clothing-admit-caribbean-organize.trycloudflare.com/admin-center.html
+
+Generálva: 2026. 07. 01. 11:17:10
+
+FONTOS:
+• A gép bekapcsolva + ez az ablak fut = elérhető bárhonnan
+• Kikapcsolás / Ctrl+C = távolról nem érhető el
+• Újraindítás után a link VÁLTOZHAT (mentés: divian-public-link.txt)
+• Bejelentkezés kötelező

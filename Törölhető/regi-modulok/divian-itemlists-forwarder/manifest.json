@@ -1,0 +1,77 @@
+{
+
+  "manifest_version": 3,
+
+  "name": "Divian item-lists Forwarder",
+
+  "description": "Belső használat: teljes item-lists (commercialItems, totals) továbbítása fix helyi API-ra. Ne telepítsd egyszerre a Lakossági lead bővítménnyel.",
+
+  "version": "1.3.0",
+
+  "permissions": [
+
+    "tabs",
+
+    "debugger"
+
+  ],
+
+  "host_permissions": [
+
+    "<all_urls>",
+
+    "http://localhost/*"
+
+  ],
+
+  "background": {
+
+    "service_worker": "background.js"
+
+  },
+
+  "content_scripts": [
+
+    {
+
+      "matches": [
+
+        "<all_urls>"
+
+      ],
+
+      "js": [
+
+        "content-main.js"
+
+      ],
+
+      "run_at": "document_start",
+
+      "world": "MAIN"
+
+    },
+
+    {
+
+      "matches": [
+
+        "<all_urls>"
+
+      ],
+
+      "js": [
+
+        "content-bridge.js"
+
+      ],
+
+      "run_at": "document_start"
+
+    }
+
+  ]
+
+}
+
+

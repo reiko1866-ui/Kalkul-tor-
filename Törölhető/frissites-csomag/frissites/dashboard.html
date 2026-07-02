@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+
+<html lang="hu">
+
+  <head>
+
+    <meta charset="utf-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Divian parancspult</title>
+
+    <link rel="stylesheet" href="divian-brand.css" />
+
+    <link rel="stylesheet" href="dashboard.css" />
+
+  </head>
+
+  <body>
+
+    <div id="dashboardRoot" class="dashboard-root is-admin">
+
+      <div class="dashboard-planner-wrap">
+
+        <div class="dashboard-planner-toolbar">
+
+          <span>Cyncly tervező</span>
+
+          <span id="plannerUrlHint"></span>
+
+          <a id="openPlannerTab" href="#" target="_blank" rel="noopener" title="Csak ha külön ablak kell — általában elég a bal oldali tervező">Külön lapon</a>
+
+        </div>
+
+        <iframe
+
+          id="plannerFrame"
+
+          class="dashboard-planner"
+
+          title="Cyncly tervező"
+
+          allow="clipboard-read; clipboard-write; fullscreen"
+
+        ></iframe>
+
+      </div>
+
+
+
+      <aside id="dashboardSidebar" class="dashboard-sidebar" aria-label="Élő tervezés">
+
+        <header class="dashboard-header">
+
+          <h1>Élő tervezés</h1>
+
+          <div id="dashboardHeaderMeta" class="dashboard-header-meta">Betöltés…</div>
+
+        </header>
+
+
+
+        <div class="dashboard-toolbar">
+
+          <button type="button" id="refreshBtn" class="dashboard-btn">Frissítés</button>
+
+          <button type="button" id="confirmWallBtn" class="dashboard-btn is-accent">Fal-sorrend OK</button>
+
+          <a href="admin-center.html" target="_blank" rel="noopener" class="dashboard-btn">Admin központ</a>
+
+        </div>
+
+
+
+        <div id="dashboardScroll" class="dashboard-scroll">
+
+          <section class="dashboard-section" data-section="floor">
+
+            <h2>Földön</h2>
+
+            <div id="sectionFloor" class="dashboard-cards"></div>
+
+          </section>
+
+          <section class="dashboard-section" data-section="wall">
+
+            <h2>Fali</h2>
+
+            <div id="sectionWall" class="dashboard-cards"></div>
+
+          </section>
+
+          <section class="dashboard-section" data-section="extras">
+
+            <h2>Kiegészítők</h2>
+
+            <div id="sectionExtras" class="dashboard-cards"></div>
+
+          </section>
+
+        </div>
+
+
+
+        <div id="dashboardTotal" class="dashboard-total">
+
+          <span>Összesen (br.)</span>
+
+          <span id="grandTotalValue">0 Ft</span>
+
+        </div>
+
+
+
+        <footer class="dashboard-footer">
+
+          <label class="dashboard-deadline-label" for="deadlineSelect">Mikorra kell a konyha?</label>
+
+          <select id="deadlineSelect">
+
+            <option value="urgent">Sürgős</option>
+
+            <option value="1month">~1 hónap</option>
+
+            <option value="2month">~2 hónap</option>
+
+            <option value="custom">Egyedi dátum</option>
+
+          </select>
+
+          <input type="date" id="deadlineCustom" hidden disabled />
+
+          <div id="dashboardStatus" class="dashboard-status"></div>
+
+        </footer>
+
+      </aside>
+
+
+
+      <button
+        type="button"
+        id="dashboardModeFab"
+        class="dashboard-mode-fab"
+        title="Admin / vevő mód váltása"
+        aria-pressed="true"
+      >
+        Vevő mód
+      </button>
+
+    </div>
+
+
+
+    <iframe
+
+      id="quoteSyncFrame"
+
+      class="dashboard-hidden-sync"
+
+      title="Árajánlat szinkron"
+
+      src="arajanlat.html?embed=dashboard"
+
+    ></iframe>
+
+
+
+    <script src="divian-cabinet-codes.js?v=20260617"></script>
+    <script src="partial-invoice-view.js"></script>
+
+    <script src="divian-dashboard.js"></script>
+
+  </body>
+
+</html>
+

@@ -1,0 +1,27 @@
+Divian Export (Google Chrome bővítmény) – figyelő + Excel export
+
+Mappa:
+c:\Users\Divian2\Desktop\DivianKalkulátor\divian-planner-csv-extension
+
+Telepítés (Chrome, fejlesztői mód):
+1) chrome://extensions
+2) Developer mode ON
+3) Load unpacked → válaszd a fenti mappát
+
+Működés:
+- A bővítmény automatikusan figyeli az oldal hálózati válaszait, és ha talál `item-lists` JSON-t, kigyűjti belőle a `commercialItems` sorokat.
+- A háttérben összesíti (cikkszám szerint összeadja a mennyiségeket).
+- A bővítmény ikonra kattintva látszik a státusz, és letölthető Excel (.xlsx).
+
+Gombok:
+- „EXCEL LETÖLTÉSE (összesített)”: teljes összesített lista
+- „Excel: utolsó pillanatkép”: az utolsó `item-lists` válasz alapján (ha van)
+- „Lista törlése”: üríti a gyűjtött összesítést
+
+Megjegyzés:
+- Első telepítés után érdemes a tervező oldalt frissíteni (F5), hogy a figyelő biztosan be tudjon indulni.
+
+Ha a bővítmény azt írja, nincs gyűjthető adat:
+- Ellenőrizd, hogy nem `file://` oldalon vagy-e (ott a bővítmény nem fut). Kell egy normál `https://...` tervező URL.
+- Frissítsd a bővítményt: chrome://extensions → Divian Export → Reload, majd a tervező F5.
+- Nyisd meg a Terméklista nézetet, és válts tabot / görgess, hogy újra lefusson a lista betöltése.

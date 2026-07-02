@@ -1,0 +1,11 @@
+# Caddy — automatikus HTTPS. Másold: deploy/Caddyfile és szerkeszd a domain nevet.
+
+megrendelo.divian.hu {
+	encode gzip
+	reverse_proxy divian:17321
+}
+
+# Több domain:
+# megrendelo.divian.hu, kalkulator.divian.hu {
+# 	reverse_proxy divian:17321
+# }

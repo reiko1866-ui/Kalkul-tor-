@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="hu">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Divian — Admin központ</title>
+    <link rel="stylesheet" href="divian-brand.css" />
+    <link rel="stylesheet" href="admin-center.css" />
+  </head>
+  <body>
+    <div class="admin-root">
+      <nav class="admin-nav" aria-label="Admin menü">
+        <h1>Admin központ</h1>
+        <button type="button" class="is-active" data-view="munkaszervezes">Munkaszervezés</button>
+        <button type="button" data-view="archivum">Ajánlatok archívuma</button>
+        <button type="button" data-view="beallitasok">Alapbeállítások</button>
+        <div class="admin-nav-foot">Belső admin · localhost:17321</div>
+      </nav>
+
+      <main class="admin-main">
+        <section id="panelMunkaszervezes" class="admin-panel is-active" aria-labelledby="munkaszervezesTitle">
+          <h2 id="munkaszervezesTitle">Munkaszervezés</h2>
+          <p class="admin-lead">
+            Felmérések és konyha-szállítási határidők — Kanban táblán. A rendszer 2 héttel a szállítás előtt
+            figyelmeztet, ha le kell adni a konyhát.
+          </p>
+          <div id="kanbanAlerts" class="summary-alerts" role="status" aria-live="polite"></div>
+          <div class="admin-toolbar">
+            <button type="button" id="refreshKanbanBtn" class="admin-btn">Frissítés</button>
+          </div>
+          <div id="kanbanBoard" class="kanban-board"></div>
+          <div id="kanbanStatus" class="admin-status"></div>
+        </section>
+
+        <section id="panelArchivum" class="admin-panel" aria-labelledby="archivumTitle">
+          <h2 id="archivumTitle">Ajánlatok archívuma</h2>
+          <p class="admin-lead">Mentett megrendelések — bizonylatok újragenerálása bármikor.</p>
+          <div class="admin-toolbar">
+            <input type="search" id="archiveSearch" placeholder="Keresés: ügyfél, sorszám…" />
+            <button type="button" id="refreshArchiveBtn" class="admin-btn">Frissítés</button>
+          </div>
+          <div class="archive-table-wrap">
+            <table class="archive-table">
+              <thead>
+                <tr>
+                  <th>Mentve</th>
+                  <th>Sorszám</th>
+                  <th>Ügyfél</th>
+                  <th>Fájlok</th>
+                  <th>Bizonylatok</th>
+                </tr>
+              </thead>
+              <tbody id="archiveTableBody"></tbody>
+            </table>
+          </div>
+          <div id="archiveStatus" class="admin-status"></div>
+        </section>
+
+        <section id="panelBeallitasok" class="admin-panel" aria-labelledby="beallitasokTitle">
+          <h2 id="beallitasokTitle">Alapbeállítások</h2>
+          <p class="admin-lead">Vágási díjak, lábárak és PDF szövegek — minden új árajánlatnál érvényes.</p>
+          <form id="settingsForm" class="admin-settings-grid">
+            <div class="admin-settings-card">
+              <h3>Munkalap vágásidíj</h3>
+              <label for="setCutFee">Egységár (Ft / db)</label>
+              <input id="setCutFee" type="number" min="0" step="10" />
+              <label for="setSilicone">Szilikon egységár (Ft / db)</label>
+              <input id="setSilicone" type="number" min="0" step="10" />
+            </div>
+            <div class="admin-settings-card">
+              <h3>Láb egységár (Ft / db)</h3>
+              <label>10 cm — I. kategória</label>
+              <input id="setLeg10I" type="number" min="0" step="10" />
+              <label>10 cm — II. kategória</label>
+              <input id="setLeg10II" type="number" min="0" step="10" />
+              <label>15 cm — I. kategória</label>
+              <input id="setLeg15I" type="number" min="0" step="10" />
+              <label>15 cm — II. kategória</label>
+              <input id="setLeg15II" type="number" min="0" step="10" />
+            </div>
+            <div class="admin-settings-card">
+              <h3>Lábelő (Ft / fm)</h3>
+              <label>10 cm — I.</label>
+              <input id="setToe10I" type="number" min="0" step="10" />
+              <label>10 cm — II.</label>
+              <input id="setToe10II" type="number" min="0" step="10" />
+              <label>15 cm — I.</label>
+              <input id="setToe15I" type="number" min="0" step="10" />
+              <label>15 cm — II.</label>
+              <input id="setToe15II" type="number" min="0" step="10" />
+            </div>
+            <div class="admin-settings-card" style="grid-column: 1 / -1">
+              <h3>PDF szövegek</h3>
+              <label for="setQuoteFooter">Árajánlat / előleg lábléc</label>
+              <textarea id="setQuoteFooter"></textarea>
+              <label for="setDeliveryNote">Szállítólevél megjegyzés</label>
+              <textarea id="setDeliveryNote"></textarea>
+              <label for="setProformaNote">Előlegbekérő megjegyzés</label>
+              <textarea id="setProformaNote"></textarea>
+            </div>
+          </form>
+          <div class="admin-toolbar" style="margin-top: 14px">
+            <button type="button" id="saveSettingsBtn" class="admin-btn is-primary">Beállítások mentése</button>
+          </div>
+          <div id="settingsStatus" class="admin-status"></div>
+        </section>
+      </main>
+    </div>
+
+    <iframe
+      id="quoteEngineFrame"
+      hidden
+      title="Árajánlat motor (archívum)"
+      src="arajanlat.html?embed=admin"
+    ></iframe>
+
+    <script src="divian-cabinet-codes.js?v=20260617"></script>
+    <script src="partial-invoice-view.js"></script>
+    <script src="divian-asztalos-munkalap.js"></script>
+    <script src="divian-admin-center.js"></script>
+  </body>
+</html>

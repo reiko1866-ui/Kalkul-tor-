@@ -1,0 +1,326 @@
+================================================================================
+  DIVIAN KALKULÁTOR — TELEPÍTÉS LÉPÉSRŐL LÉPÉSRE (KEZDŐKNEK IS)
+================================================================================
+
+Olvasd végig először egészben, aztán csináld meg sorban.
+Ne ugorj át lépést. Ha elakadsz: állj meg, készíts képernyőképet, és kérj segítséget.
+
+A mappa neve: DivianKalkulátor
+A telepítés kb. 15–25 perc (első alkalommal, internet kell).
+
+================================================================================
+  RÖVID ÖSSZEFOGLALÓ — MIT FOGSZ CSINÁLNI?
+================================================================================
+
+  1. lépés: Node.js program telepítése a gépre (csak egyszer, első alkalommal)
+  2. lépés: DivianKalkulátor mappa másolása az Asztalra
+  3. lépés: Ellenőrzés, hogy minden fájl megvan-e
+  4. lépés: Dupla kattintás → install-fuggosegek.bat
+  5. lépés: Dupla kattintás → install-playwright-chrome.bat
+  6. lépés: Dupla kattintás → start-playwright-forwarder.bat (ez indítja a programot)
+  7. lépés: Használat (böngészőben)
+
+  Minden nap csak a 6. lépés kell (start-playwright-forwarder.bat).
+
+================================================================================
+  1. LÉPÉS — NODE.JS TELEPÍTÉSE (CSAK EGYSZER A GÉPEN)
+================================================================================
+
+  Mi ez? Egy ingyenes program, ami nélkül a Divian kalkulátor nem indul el.
+  Ha már egyszer telepítették ezen a gépen és működött, ezt a lépést kihagyhatod
+  — de ha nem vagy biztos benne, csináld meg újra, nem árt.
+
+  --- 1.1 Böngésző megnyitása ---
+
+  • Nyisd meg a Chrome-ot vagy az Edge-et (bármelyik internetes böngésző).
+
+  --- 1.2 Letöltés ---
+
+  • Írd be a címsorba (felül):   nodejs.org
+  • Enter.
+  • A főoldalon keresd a nagy zöld gombot, amin ez van (vagy hasonló):
+        „LTS”   vagy   „Recommended For Most Users”
+  • Kattints rá → letöltődik egy fájl (pl. node-v22....msi).
+
+  --- 1.3 Telepítés ---
+
+  • Nyisd meg a letöltött fájlt (általában a Letöltések mappában).
+  • Next → Next → Accept (elfogadás) → Next...
+  • FONTOS: Ha felugrik egy pipa „Add to PATH” vagy „Automatically install tools”:
+        LEGYEN BEPÉLVE (pipa benne).
+  • Install → várj, amíg kész → Finish.
+
+  --- 1.4 Gép újraindítása ---
+
+  • Ha a telepítő kéri: indítsd újra a gépet.
+  • Ha nem kéri: akkor is érdemes egyszer újraindítani (Start menü → Újraindítás).
+
+  --- 1.5 Ellenőrzés (nem kötelező, de hasznos) ---
+
+  • Billentyű: Windows + R  (egyszerre nyomd)
+  • Megjelenik egy kis ablak „Futtatás” felirattal.
+  • Írd be:   cmd
+  • Enter.
+  • Fekete ablak nyílik. Írd be pontosan (Enter a végén):
+        node -v
+  • Ha pl. v22.11.0 jelenik meg (számok), JÓ.
+  • Írd be:
+        npm -v
+  • Ha pl. 10.9.0 jelenik meg, JÓ.
+  • Bezárhatod az ablakot (X jobb felső sarok).
+
+  Ha „nem ismeri fel” / „not recognized” hibát ír: Node.js nincs jól telepítve.
+  Ismételd az 1. lépést, pipáld be az „Add to PATH”-ot, indítsd újra a gépet.
+
+================================================================================
+  2. LÉPÉS — A DIVIANKALKULÁTOR MAPPA MÁSOLÁSA A GÉPRE
+================================================================================
+
+  --- 2.1 Honnan jön a mappa? ---
+
+  USB pendrive, zip fájl, vagy hálózati meghajtó — ahogy kaptad.
+
+  --- 2.2 Hova másold? ---
+
+  • Nyisd meg a Fájlkezelőt (sárga mappa ikon a tálcán).
+  • Menj az Asztalra (Bal oldalon: Asztal / Desktop).
+  • Másold ide a teljes „DivianKalkulátor” mappát.
+
+  Ajánlott útvonal (példa Asus gépen):
+        C:\Users\Asus\Desktop\DivianKalkulátor
+
+  FONTOS:
+  • Ne csak egy-két fájlt másolj — az EGÉSZ mappát!
+  • Ne futtasd közvetlenül USB-ről (F:, G:) — másold előbb az Asztalra.
+  • A mappa neve legyen: DivianKalkulátor (ékezetekkel, ahogy kaptad).
+
+  --- 2.3 Hogyan másolj? (ha zip-ben jött) ---
+
+  • Jobb klikk a zip fájlon → „Összes kibontása” / Extract All.
+  • Cél: Asztal.
+  • Kész → az Asztalon megjelenik a DivianKalkulátor mappa.
+
+================================================================================
+  3. LÉPÉS — ELLENŐRZÉS: MINDEN FÁJL MEGVAN-E
+================================================================================
+
+  --- 3.1 Mappa megnyitása ---
+
+  • Asztalon dupla kattintás a „DivianKalkulátor” mappára.
+  • Látnod kell sok fájlt és almappát.
+
+  --- 3.2 Ezeknek KELL lenniük (név szerint, kis-nagybetű számít) ---
+
+  Keresd meg Intézőben (görgess, vagy név szerint rendezd):
+
+        package.json
+        arajanlat.html
+        divian-playwright-forwarder.js
+        install-fuggosegek.bat
+        install-playwright-chrome.bat
+        start-playwright-forwarder.bat
+        TELEPITES-GEPENKENT.txt   (ez az útmutató)
+
+  Ha az install-fuggosegek.bat NINCS ott:
+        → Régi másolatod van. Kérj új zip/USB-t, és másold felül az egész mappát.
+
+  --- 3.3 Mi az a .bat fájl? ---
+
+  Kis „indító” fájl. Dupla kattintásra megcsinálja helyetted a bonyolult dolgokat.
+  Nem kell parancssor, nem kell gépkód.
+
+================================================================================
+  4. LÉPÉS — FÜGGŐSÉGEK TELEPÍTÉSE (install-fuggosegek.bat)
+================================================================================
+
+  Ezt csak egyszer kell (vagy ha frissítették a mappát).
+
+  --- 4.1 Mit csinálj? ---
+
+  • A DivianKalkulátor mappában keresd meg:
+        install-fuggosegek.bat
+  • DUPLA KATTINTÁS rá (bal egérgomb, kétszer gyorsan).
+
+  --- 4.2 Mit látsz? ---
+
+  • Megnyílik egy FEKETE parancssor ablak.
+  • Felül valami ilyesmi:  Mappa: C:\Users\...\DivianKalkulátor
+  • Alatta futnak a sorok (npm install).
+  • Várj 1–3 percet. NE zárd be közben!
+
+  --- 4.3 Mikor kész? ---
+
+  • Ha ezt látod alul:
+        Kesz. Kovetkezo lepes: install-playwright-chrome.bat (egyszer)
+  • Majd: „Nyomjon meg egy billentyűt...” → nyomj egy billentyűt (pl. Szóköz).
+  • Az ablak bezárul. → SIKERES.
+
+  --- 4.4 Ha hibát ír ---
+
+  „HIBA: package.json nem talalhato”
+        → Rossz mappában vagy. Nyisd meg az Asztalon a DivianKalkulátor mappát,
+          onnan indítsd újra a .bat fájlt.
+
+  „HIBA: Node.js nincs telepitve”
+        → Csináld meg az 1. lépést (Node.js), indítsd újra a gépet, próbáld újra.
+
+  Piros szöveg PowerShellben „npm.ps1 / running scripts is disabled”:
+        → NE PowerShellt használj! Csak a .bat fájlt (4. lépés).
+        → Ha kézzel írtál npm install-t kék ablakban: hagyd abba, használd a .bat-ot.
+
+  Bármilyen más piros hiba:
+        → NE zárd be azonnal. Készíts képernyőképet (Print Screen), küldd el.
+
+================================================================================
+  5. LÉPÉS — CHROME LETÖLTÉSE A PROGRAMNAK (install-playwright-chrome.bat)
+================================================================================
+
+  Egyszer kell gépenként. Internet kell (lehet több perc, nagy letöltés).
+
+  --- 5.1 ---
+
+  • Ugyanabban a DivianKalkulátor mappában:
+        install-playwright-chrome.bat
+  • DUPLA KATTINTÁS.
+
+  --- 5.2 ---
+
+  • Fekete ablak, szöveg fut.
+  • Várj türelmesen (akár 5–10 perc is lehet lassú neten).
+  • NE zárd be közben!
+
+  --- 5.3 Kész ---
+
+  • Ha látod:  Kesz. Inditas: start-playwright-forwarder.bat
+  • Billentyű → ablak bezárul.
+
+  Ha „Eloszor futtasd: install-fuggosegek.bat”:
+        → Előbb csináld meg a 4. lépést, aztán ezt újra.
+
+================================================================================
+  6. LÉPÉS — PROGRAM INDÍTÁSA (MINDEN HASZNÁLATKOR EZ KELL)
+================================================================================
+
+  --- 6.1 Reggel / munkakezdéskor ---
+
+  • Asztal → DivianKalkulátor mappa →
+        start-playwright-forwarder.bat
+  • DUPLA KATTINTÁS.
+
+  --- 6.2 Mit látsz? ---
+
+  • Fekete ablak megmarad NYITVA. EZ NORMÁLIS. NE zárd be!
+  • Pár másodperc múlva általában megnyílik:
+        – a Cyncly konyhatervező (böngészőben)
+        – az ajánlat oldal (arajanlat)
+
+  --- 6.3 Fontos szabályok ---
+
+  • Amíg dolgozol, a fekete ablak MARADJON nyitva.
+  • Ha bezárod a fekete ablakot → a „Kép kérése a tervezőből” NEM fog működni.
+  • Újraindításhoz: újra dupla katt start-playwright-forwarder.bat.
+
+  --- 6.4 Parancsikon az Asztalra (opcionális, egyszer) ---
+
+  • DivianKalkulátor mappában: jobb klikk a start-playwright-forwarder.bat fájlra.
+  • „Küldés” → „Asztal (parancsikon létrehozása)”.
+  • Innentől az Asztalról is elindíthatod egy kattintással.
+
+================================================================================
+  7. LÉPÉS — HASZNÁLAT (MIT CSINÁLJ A BÖNGÉSZŐBEN)
+================================================================================
+
+  • Az ajánlatot a megnyílt böngészőablakban töltöd ki (arajanlat).
+  • A tervezőben dolgozol a Cyncly oldalon.
+  • Ha „Kép kérése a tervezőből” gombot használsz:
+        → A fekete ablaknak (6. lépés) futnia KELL.
+        → Ha nem működik: zárd be mindent, indítsd újra a start-playwright-forwarder.bat-ot.
+
+  Munka végén:
+  • Bezárhatod a böngészőt.
+  • Bezárhatod a fekete ablakot is (akkor leáll a program).
+
+================================================================================
+  GYAKORI HIBÁK — MIT JELENT ÉS MIT TEgyél
+================================================================================
+
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │ HIBA: „npm.ps1 cannot be loaded” / „running scripts is disabled”           │
+  ├─────────────────────────────────────────────────────────────────────────────┤
+  │ Mit csináltál rosszul: PowerShellben (KÉK ablak, PS felirat) írtad az     │
+  │ npm install parancsot.                                                       │
+  │ Megoldás: NE írj be semmit kézzel. Dupla katt: install-fuggosegek.bat       │
+  └─────────────────────────────────────────────────────────────────────────────┘
+
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │ HIBA: „Could not read package.json” / ENOENT                                │
+  ├─────────────────────────────────────────────────────────────────────────────┤
+  │ Rossz mappában futott a telepítés.                                          │
+  │ Megoldás: Asztal → DivianKalkulátor → onnan install-fuggosegek.bat         │
+  └─────────────────────────────────────────────────────────────────────────────┘
+
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │ HIBA: „node is not recognized” / „nem ismeri fel”                           │
+  ├─────────────────────────────────────────────────────────────────────────────┤
+  │ Node.js nincs telepítve vagy nincs újraindítva a gép.                      │
+  │ Megoldás: 1. lépés újra, gép újraindítás, majd 4. lépés.                   │
+  └─────────────────────────────────────────────────────────────────────────────┘
+
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │ Nem nyílik meg a böngésző / tervező                                         │
+  ├─────────────────────────────────────────────────────────────────────────────┤
+  │ Megoldás: Futtasd újra az install-playwright-chrome.bat-ot (5. lépés),     │
+  │ várj amíg kész, majd start-playwright-forwarder.bat (6. lépés).            │
+  └─────────────────────────────────────────────────────────────────────────────┘
+
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │ Windows figyelmeztet: „Ismeretlen kiadó” / SmartScreen                      │
+  ├─────────────────────────────────────────────────────────────────────────────┤
+  │ További információ → Futtatás mindenképp (ha a Divian mappából indítod).   │
+  └─────────────────────────────────────────────────────────────────────────────┘
+
+================================================================================
+  NE HASZNÁLD EZEKET (ZAVARÓ DOLGOK)
+================================================================================
+
+  • NE írj be parancsokat kék PowerShell ablakba (npm install stb.).
+  • NE töröld a node_modules mappát, ha létrejött (4. lépés után).
+  • NE futtasd a programot USB-ről — másold az Asztalra.
+  • A start-lan-proba.bat fájl NEM kell normál használathoz (csak irodai Wi-Fi teszthez).
+
+================================================================================
+  FRISSÍTÉS — HA ÚJ VERZIÓT KAPTÁL
+================================================================================
+
+  1. Zárd be a fekete ablakot és a böngészőt.
+  2. Másold felül az egész DivianKalkulátor mappát (vagy csak az új fájlokat).
+  3. Dupla katt: install-fuggosegek.bat (várj, amíg kész).
+  4. Dupla katt: start-playwright-forwarder.bat.
+
+================================================================================
+  SEGÍTSÉG KÉRÉSE — MIT KÜLDJ EL
+================================================================================
+
+  Ha elakadsz, küldj 2 képernyőképet:
+  1. A DivianKalkulátor mappa tartalma (Intéző, fájlnevek látszanak).
+  2. A hibaüzenet teljes fekete vagy kék ablak (ne vágd le alul).
+
+  Írd mellé:
+  • Melyik lépésnél jártál (pl. „4. lépés, install-fuggosegek”).
+  • A gép Windows felhasználóneve (pl. Asus) és hogy Asztalon van-e a mappa.
+
+================================================================================
+  ELLENŐRZŐ LISTA — PIPÁLD KI MAGADNAK
+================================================================================
+
+  [ ] 1. Node.js telepítve, gép újraindítva
+  [ ] 2. DivianKalkulátor mappa az Asztalon
+  [ ] 3. Megvan: install-fuggosegek.bat és install-playwright-chrome.bat
+  [ ] 4. install-fuggosegek.bat lefutott, „Kesz”-et írt
+  [ ] 5. install-playwright-chrome.bat lefutott, „Kesz”-et írt
+  [ ] 6. start-playwright-forwarder.bat megnyitotta a tervezőt és az ajánlatot
+  [ ] 7. Fekete ablak nyitva marad munka közben
+
+  Ha mind pipa → kész a telepítés.
+
+================================================================================

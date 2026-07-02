@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Megrendelőlap · Divian (pendrive sablon)</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 14mm;
+    }
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+    }
+    html {
+      font-size: 12pt;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    body {
+      margin: 0;
+      font-family: Manrope, "Segoe UI", system-ui, sans-serif;
+      color: #2b3632;
+      background: #eceef2;
+      line-height: 1.35;
+    }
+    .toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      padding: 0.6rem 1rem;
+      background: linear-gradient(102deg, #1a1c21 0%, #1f2830 42%, #2d3a42 100%);
+      color: #fff;
+      border-bottom: 3px solid #f3bf35;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .toolbar button {
+      background: linear-gradient(135deg, #800040 0%, #6b0036 100%);
+      color: #fff;
+      border: 0;
+      padding: 0.45rem 0.95rem;
+      border-radius: 8px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+    .toolbar button:hover {
+      filter: brightness(1.06);
+    }
+    .toolbar span {
+      opacity: 0.88;
+      font-size: 0.85rem;
+    }
+    .sheet {
+      max-width: 210mm;
+      margin: 1rem auto 2rem;
+      background: #fff;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+      padding: 12mm;
+    }
+    h1 {
+      margin: 0 0 0.15rem;
+      font-size: 1.45rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border-bottom: 3px solid #f3bf35;
+      padding-bottom: 0.35rem;
+      color: #800040;
+    }
+    .subhead {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.5rem;
+      font-size: 0.82rem;
+      color: #4a5b6c;
+      margin-bottom: 0.9rem;
+    }
+    fieldset.grid {
+      border: 1px solid #cdd6df;
+      border-radius: 6px;
+      padding: 0.65rem 0.85rem;
+      margin: 0 0 0.75rem;
+    }
+    legend {
+      padding: 0 0.35rem;
+      font-weight: 800;
+      font-size: 0.82rem;
+      color: #800040;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+    .rows {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.45rem 1rem;
+    }
+    .rows.full {
+      grid-template-columns: 1fr;
+    }
+    @media (max-width: 640px) {
+      .rows {
+        grid-template-columns: 1fr;
+      }
+    }
+    label {
+      display: flex;
+      flex-direction: column;
+      gap: 0.18rem;
+      font-size: 0.74rem;
+      font-weight: 600;
+      color: #445560;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+    input[type="text"],
+    input[type="date"],
+    input[type="email"],
+    textarea {
+      width: 100%;
+      border: 1px solid #b8c5d0;
+      border-radius: 4px;
+      padding: 0.35rem 0.45rem;
+      font: inherit;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: #1a2330;
+      background: #fafbfc;
+    }
+    textarea {
+      min-height: 3.2rem;
+      resize: vertical;
+    }
+    table.items {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      margin-top: 0.25rem;
+    }
+    table.items th,
+    table.items td {
+      border: 1px solid #a8b4bf;
+      padding: 0.28rem 0.35rem;
+      vertical-align: top;
+    }
+    table.items th {
+      background: #e9eef3;
+      font-weight: 700;
+      text-align: center;
+      text-transform: uppercase;
+      font-size: 0.65rem;
+      letter-spacing: 0.03em;
+      color: #2c4152;
+    }
+    table.items td input {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      padding: 0.15rem;
+      font: inherit;
+      min-height: 1.35rem;
+    }
+    .sums {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.35rem;
+      margin-top: 0.65rem;
+      max-width: 320px;
+      margin-left: auto;
+      font-size: 0.9rem;
+    }
+    .sums label {
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .sign {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-top: 1.75rem;
+      padding-top: 0.75rem;
+      border-top: 1px dashed #cdd6df;
+      font-size: 0.78rem;
+    }
+    .sign .line {
+      border-bottom: 1px solid #1a2330;
+      margin-top: 2.25rem;
+      margin-bottom: 0.35rem;
+    }
+    footer.note {
+      margin-top: 1rem;
+      font-size: 0.68rem;
+      color: #6b7885;
+      line-height: 1.4;
+    }
+    @media print {
+      html {
+        font-size: 11pt;
+      }
+      body {
+        background: #fff;
+      }
+      .toolbar {
+        display: none !important;
+      }
+      .sheet {
+        box-shadow: none;
+        margin: 0;
+        max-width: none;
+        padding: 0;
+      }
+      input,
+      textarea {
+        background: transparent !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="toolbar">
+    <button type="button" onclick="window.print()">Nyomtatás / PDF mentése</button>
+    <span>Az eszközsáv nyomtatáskor nem jelenik meg. Edge/Chrome ajánlott.</span>
+  </div>
+
+  <div class="sheet">
+    <h1>Megrendelőlap</h1>
+    <div class="subhead">
+      <span><strong>Fizető / vállalkozás:</strong> _________________________________</span>
+      <span>Sablon – pendrive / kinyomtatható</span>
+    </div>
+
+    <fieldset class="grid">
+      <legend>Azonosítás</legend>
+      <div class="rows">
+        <label>Megrendelés szám <input name="megrendSzam" type="text" placeholder="" /></label>
+        <label>Dátum <input name="datum" type="date" /></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="grid">
+      <legend>Megrendelő (ügyfél)</legend>
+      <div class="rows">
+        <label>Név <input name="nev" type="text" autocomplete="name" /></label>
+        <label>Cím <input name="cim" type="text" autocomplete="street-address" /></label>
+      </div>
+      <div class="rows" style="margin-top: 0.45rem">
+        <label>Telefon <input name="tel" type="text" autocomplete="tel" /></label>
+        <label>E-mail <input name="mail" type="email" autocomplete="email" /></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="grid">
+      <legend>Konyha adatok (tervjegyzék)</legend>
+      <div class="rows">
+        <label>Konyha típusa <input name="kitchenType" type="text" /></label>
+        <label>Korpusz szín <input name="korpusz" type="text" /></label>
+      </div>
+      <div class="rows" style="margin-top: 0.45rem">
+        <label>Alsó front <input name="alsoFront" type="text" /></label>
+        <label>Felső front <input name="felsoFront" type="text" /></label>
+      </div>
+      <div class="rows" style="margin-top: 0.45rem">
+        <label>Munkalap <input name="munkalap" type="text" /></label>
+        <label>Fogantyú <input name="foganytu" type="text" /></label>
+      </div>
+      <div class="rows full" style="margin-top: 0.45rem">
+        <label>Tervező / üzlet <input name="tervezo" type="text" /></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="grid">
+      <legend>Tételek</legend>
+      <table class="items" aria-label="Megrendelés tételei">
+        <thead>
+          <tr>
+            <th style="width: 2.2rem">#</th>
+            <th style="width: 7rem">Cikkszám</th>
+            <th>Megnevezés</th>
+            <th style="width: 3.2rem">db</th>
+            <th style="width: 6rem">Egységár (Ft)</th>
+            <th style="width: 7rem">Sorösszeg (Ft)</th>
+          </tr>
+        </thead>
+        <tbody id="itemRows"></tbody>
+      </table>
+      <script>
+        (function () {
+          var tbody = document.getElementById("itemRows");
+          var rows = 16;
+          for (var i = 1; i <= rows; i++) {
+            var tr = document.createElement("tr");
+            tr.innerHTML =
+              '<td style="text-align:center">' +
+              i +
+              "</td>" +
+              '<td><input type="text" /></td>' +
+              '<td><input type="text" /></td>' +
+              '<td><input type="text" /></td>' +
+              '<td><input type="text" /></td>' +
+              '<td><input type="text" /></td>';
+            tbody.appendChild(tr);
+          }
+        })();
+      </script>
+
+      <div class="sums">
+        <label>ÁFA kulcs(ok) megjegyzés <input name="afaMegjegyzes" type="text" /></label>
+        <label></label>
+        <label>Nettó összesen (Ft) <input name="nettó" type="text" /></label>
+        <label>ÁFA (Ft) <input name="afa" type="text" /></label>
+        <label style="grid-column: 1 / -1"><strong>Bruttó fizetendő (Ft)</strong><input name="brutto" type="text" /></label>
+      </div>
+    </fieldset>
+
+    <fieldset class="grid">
+      <legend>Megjegyzés</legend>
+      <div class="rows full">
+        <label style="font-weight: 400; text-transform: none"
+          ><textarea name="megjegyzés" placeholder="Szállítási rend, határidő, kapcsolattartó, egyéb…"></textarea
+        ></label>
+      </div>
+    </fieldset>
+
+    <div class="sign">
+      <div>
+        <strong>Megrendelő aláírása</strong>
+        <div class="line"></div>
+        <span>dátum, hely</span>
+      </div>
+      <div>
+        <strong>Üzlet / értékesítő aláírása</strong>
+        <div class="line"></div>
+        <span>dátum</span>
+      </div>
+    </div>
+
+    <footer class="note">
+      A megrendelés aláírásával – illetőleg bruttó végösszegnek megfelelő előleg / teljes befizetés teljesültekor –
+      a felek kötelezik magukat az itt megadott adatok és tételek szerinti teljesítésre, ha ezt vállaljuk.
+      Ez a dokumentum gépi sablon; a jogi szöveget az áruház használja. Kézműves változásnál törölhető /
+      szerkeszthető előtte.
+    </footer>
+  </div>
+</body>
+</html>

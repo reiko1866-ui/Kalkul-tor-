@@ -1,0 +1,458 @@
+/* Divian központi adminisztrációs központ — teljes képernyő */
+.admin-root {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  background: var(--bg-soft, #f4f6f5);
+  color: var(--divian-slate, #2d3a42);
+}
+
+.admin-nav {
+  background: var(--divian-burgundy, #800040);
+  color: #fff;
+  padding: 20px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-nav h1 {
+  margin: 0 0 16px;
+  font-size: 1.05rem;
+  line-height: 1.3;
+  font-weight: 700;
+}
+
+.admin-nav button {
+  text-align: left;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.88);
+  padding: 10px 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.92rem;
+}
+
+.admin-nav button.is-active,
+.admin-nav button:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #fff;
+}
+
+.admin-nav .admin-nav-foot {
+  margin-top: auto;
+  font-size: 0.75rem;
+  opacity: 0.75;
+  padding: 8px 4px 0;
+}
+
+.admin-main {
+  padding: 20px 24px 32px;
+  overflow: auto;
+}
+
+.admin-panel {
+  display: none;
+}
+
+.admin-panel.is-active {
+  display: block;
+}
+
+.admin-panel--quote {
+  display: none;
+  flex-direction: column;
+  min-height: calc(100vh - 40px);
+}
+
+.admin-panel--quote.is-active {
+  display: flex;
+}
+
+.admin-quote-sync-status {
+  margin-bottom: 8px;
+  min-height: 1.25rem;
+}
+
+.admin-quote-frame {
+  flex: 1;
+  width: 100%;
+  min-height: calc(100vh - 160px);
+  border: 1px solid rgba(128, 0, 64, 0.15);
+  border-radius: 12px;
+  background: #faf8f4;
+}
+
+.admin-panel h2 {
+  margin: 0 0 6px;
+  font-size: 1.35rem;
+  color: var(--divian-burgundy);
+}
+
+.admin-panel .admin-lead {
+  margin: 0 0 18px;
+  color: var(--muted, #6e7d76);
+  font-size: 0.9rem;
+}
+
+.admin-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.admin-toolbar input[type="search"],
+.admin-toolbar input[type="text"],
+.admin-toolbar input[type="number"],
+.admin-toolbar textarea,
+.admin-settings-grid input,
+.admin-settings-grid textarea {
+  border: 1px solid var(--divian-burgundy-line, #e8d0dc);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font: inherit;
+}
+
+.admin-btn {
+  border: 1px solid var(--divian-burgundy-line);
+  background: #fff;
+  color: var(--divian-burgundy);
+  border-radius: 8px;
+  padding: 8px 14px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.admin-btn.is-primary {
+  background: var(--divian-burgundy);
+  color: #fff;
+  border-color: var(--divian-burgundy);
+}
+
+.admin-btn.is-accent {
+  background: var(--divian-mustard, #f3bf35);
+  border-color: #d9a820;
+  color: #3a2e00;
+}
+
+.admin-status {
+  font-size: 0.85rem;
+  margin-top: 10px;
+  min-height: 1.2em;
+}
+
+.admin-status.is-err {
+  color: #b42318;
+}
+
+.admin-status.is-ok {
+  color: #067647;
+}
+
+/* Kanban */
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(180px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.kanban-col {
+  background: #fff;
+  border: 1px solid var(--divian-burgundy-line);
+  border-radius: 12px;
+  min-height: 280px;
+  padding: 10px;
+}
+
+.kanban-col h3 {
+  margin: 0 0 10px;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 2px solid var(--divian-mustard);
+  padding-bottom: 6px;
+}
+
+.kanban-card {
+  background: var(--bg-soft);
+  border: 1px solid var(--divian-burgundy-line);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 8px;
+  cursor: grab;
+}
+
+.kanban-card h4 {
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+}
+
+.kanban-card p {
+  margin: 0 0 8px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.kanban-card-sub {
+  margin-bottom: 4px !important;
+}
+
+.kanban-card-meta {
+  font-size: 0.76rem !important;
+  line-height: 1.35;
+}
+
+.kanban-card-warn {
+  margin: 0 0 8px !important;
+  padding: 6px 8px;
+  border-radius: 6px;
+  background: #fff3cd;
+  color: #856404;
+  font-size: 0.75rem !important;
+  font-weight: 600;
+}
+
+.kanban-card.has-warn {
+  border-color: #e6a800;
+  box-shadow: 0 0 0 1px rgba(230, 168, 0, 0.25);
+}
+
+.kanban-card.is-felmeres-done {
+  border-color: rgba(46, 125, 74, 0.45);
+}
+
+.kanban-card-meta .is-ok-text {
+  color: #2e7d4a;
+}
+
+.kanban-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.kanban-card-actions .admin-btn {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+}
+
+/* Archívum táblázat */
+.archive-table-wrap {
+  overflow: auto;
+  background: #fff;
+  border: 1px solid var(--divian-burgundy-line);
+  border-radius: 12px;
+}
+
+.archive-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.archive-table th,
+.archive-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.archive-table th {
+  background: #faf7f9;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.archive-table tr:hover td {
+  background: #fffdf6;
+}
+
+.archive-doc-badges {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.archive-badge {
+  font-size: 0.68rem;
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: #eee;
+}
+
+.archive-badge.is-yes {
+  background: #d1fadf;
+  color: #067647;
+}
+
+.archive-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Beállítások */
+.admin-settings-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  max-width: 1100px;
+}
+
+.admin-settings-card {
+  background: #fff;
+  border: 1px solid var(--divian-burgundy-line);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+.admin-settings-card h3 {
+  margin: 0 0 10px;
+  font-size: 0.95rem;
+}
+
+.admin-settings-card label {
+  display: block;
+  font-size: 0.8rem;
+  margin: 8px 0 4px;
+  color: var(--muted);
+}
+
+.admin-settings-card textarea {
+  width: 100%;
+  min-height: 72px;
+  resize: vertical;
+}
+
+.admin-hidden-sync {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  border: 0;
+}
+
+@media (max-width: 1100px) {
+  .kanban-board {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 760px) {
+  .admin-root {
+    grid-template-columns: 1fr;
+  }
+  .admin-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .kanban-board {
+    grid-template-columns: 1fr;
+  }
+}
+
+.summary-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+.summary-alert {
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  border-left: 4px solid transparent;
+}
+
+.summary-alert.is-warn {
+  background: #fff8e6;
+  border-left-color: #e6a800;
+  color: #5c4a00;
+}
+
+.summary-alert.is-critical {
+  background: #fdecec;
+  border-left-color: #c62828;
+  color: #6b1a1a;
+}
+
+.summary-alert.is-ok {
+  background: #eef8f1;
+  border-left-color: #2e7d4a;
+  color: #1e4d30;
+}
+
+.summary-table-wrap {
+  overflow: auto;
+  border: 1px solid var(--line, #dde3e0);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.86rem;
+}
+
+.summary-table th,
+.summary-table td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--line, #e8ecea);
+  vertical-align: middle;
+}
+
+.summary-table th {
+  background: var(--bg-soft, #f4f6f5);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.summary-table tr:last-child td {
+  border-bottom: none;
+}
+
+.summary-badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.summary-badge.is-warn {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.summary-badge.is-critical {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.summary-badge.is-muted {
+  background: #eef1f0;
+  color: #5a6a62;
+}
+
+.summary-badge.is-ok {
+  background: #d4edda;
+  color: #155724;
+}
+
+.summary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}

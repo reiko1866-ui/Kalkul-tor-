@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="hu">
+  <head>
+    <meta charset="utf-8" />
+    <title>Divian B2C lead – beállítások</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 42rem;
+        margin: 1rem auto;
+        padding: 0 1rem;
+        line-height: 1.45;
+      }
+      label {
+        display: block;
+        font-weight: 600;
+        margin-top: 0.85rem;
+      }
+      input[type="text"],
+      input[type="url"],
+      textarea {
+        width: 100%;
+        box-sizing: border-box;
+        margin-top: 0.25rem;
+        padding: 0.4rem 0.5rem;
+      }
+      textarea {
+        min-height: 4rem;
+        resize: vertical;
+      }
+      .hint {
+        font-size: 0.85rem;
+        font-weight: normal;
+        color: #444;
+      }
+      button {
+        margin-top: 1rem;
+        padding: 0.45rem 1rem;
+        cursor: pointer;
+      }
+      #status {
+        margin-top: 0.75rem;
+        min-height: 1.25rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Divian lakossági lead</h1>
+    <p class="hint">
+      Ez a bővítmény <strong>csak</strong> a normalizált tételeket küldi (cikkszám, megnevezés, mennyiség), plusz
+      lenti vevő mezőket. Nyers <code>commercialItems</code> / összesítő <code>totals</code> nem kerül a szerverre.
+      Ugyanarra a Chrome-profilra ne telepítsd a „Divian item-lists Forwarder” (belső, teljes) bővítményt.
+    </p>
+
+    <label for="forwardEndpoint">Központi szerver – továbbítás URL (POST, JSON)</label>
+    <input
+      id="forwardEndpoint"
+      type="url"
+      placeholder="https://pelda.hu/api/divian-b2c-lead.php"
+      autocomplete="off"
+    />
+
+    <label for="apiKey">API kulcs (opcionális, <code>X-Api-Key</code> fejléc)</label>
+    <input id="apiKey" type="text" autocomplete="off" />
+
+    <h2 style="margin-top: 1.25rem; font-size: 1.05rem">Vevő (minden beküldéshez hozzáadódik a JSON-hoz)</h2>
+    <label for="customerName">Név</label>
+    <input id="customerName" type="text" autocomplete="name" />
+
+    <label for="customerEmail">E-mail</label>
+    <input id="customerEmail" type="text" autocomplete="email" />
+
+    <label for="customerPhone">Telefon</label>
+    <input id="customerPhone" type="text" autocomplete="tel" />
+
+    <label for="customerNote">Megjegyzés</label>
+    <textarea id="customerNote"></textarea>
+
+    <button type="button" id="save">Mentés</button>
+    <div id="status" role="status"></div>
+
+    <script src="options.js"></script>
+  </body>
+</html>

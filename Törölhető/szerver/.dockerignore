@@ -1,0 +1,10 @@
+node_modules
+pw-user-data
+.git
+frissites
+_archiv
+*.log
+config/szerver.local.env
+szamlazz-agent-key.txt
+divian-public-link.txt
+.cursor

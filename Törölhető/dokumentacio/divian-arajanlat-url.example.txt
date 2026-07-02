@@ -1,0 +1,5 @@
+# Opcionális: egy sorban az árajánlat oldal teljes útvonala vagy http(s) URL-je.
+# Ha üres vagy rossz gépre mutat, a forwarder a saját mappájában lévő arajanlat.html-t használja.
+#
+# Példa (NE másold át másik gépre változtatás nélkül):
+# file:///C:/Users/Asus/Desktop/Divian Kalkulátor/DivianKalkulátor/arajanlat.html
